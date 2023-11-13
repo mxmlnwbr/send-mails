@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "send-mails"
+version = "0.1.0"
+description = "sending mails automatically via gmail"
+authors = ["mxmlnwbr <maximilian.weber@bluewin.ch>"]
+readme = "README.md"
+packages = [{include = "send_mails"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

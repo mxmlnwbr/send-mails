@@ -23,12 +23,14 @@ df = pd.read_excel(
     "/Users/mw/Documents/send-mails/eventfrog-ticketexport.xlsx", sheet_name="Tickets"
 )
 email_adresses = df["E-Mail"].tolist()
-email_adresses_no_duplicates = list(set(email_adresses))
 
 # Python code to illustrate Sending mail with attachments
 # from your Gmail account
-for toaddr in tqdm(email_adresses_no_duplicates):
-    tqdm.write(toaddr)
+counter = 0
+for toaddr in tqdm(email_adresses):
+    counter += 1
+
+    tqdm.write(f"Number {counter}: {toaddr}")
 
     msg = MIMEMultipart()
     msg["From"] = FROM

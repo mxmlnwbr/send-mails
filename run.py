@@ -1,4 +1,5 @@
 # libraries to be imported
+from email.mime.image import MIMEImage
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -14,15 +15,11 @@ load_dotenv()
 smtp_server = "smtp.gmail.com"
 port = 587  # For starttls
 
+df = pd.read_excel("/Users/mw/Documents/send-mails/input.xlsx", sheet_name=0)
+email_adresses = df["E-Mail:"].tolist()
+
 FROM = os.getenv("GMAIL_ACCOUNT")
 PASSWORD = os.getenv("GMAIL_PASSWORD")
-subject = "Ticketumtausch RigiBeats 2024"
-body = "👋 Hallo lieber Gast! 🤩\n\nWir können es kaum erwarten, mit dir am 20.01.2024 auf der Rigi zu feiern! 🎉\nDer Ticketansturm war enorm, und die Eventfrog-Seite hatte Schwierigkeiten, mit dem Andrang mitzuhalten. Einige haben uns bereits mitgeteilt, dass sie nicht die gewünschte Ticketkategorie kaufen konnten und deshalb sich ein anderes Ticket sicherten.\n\nDa Fairness für uns oberste Priorität hat, bieten wir dir hier die Möglichkeit an, falsch gekaufte Tickets gegen die richtigen umzutauschen. Falls dich dies betrifft, findest du mehr Infos unter folgendem Link: https://docs.google.com/forms/d/e/1FAIpQLSfze4KtZJLOQMHrzRTw5q5uwcWXNoZBz8NeoM_kYIeWnDM0UQ/viewform?usp=sf_link\n\n**WICHTIG: AUSFÜLLEN BIS ZUM 26.11.2023 UM 20:00 UHR, ANSONSTEN KÖNNEN WIR DEINE ÄNDERUNGEN NICHT MEHR BERÜCKSICHTIGEN!**\n\nDanke für dein Verständnis & Bis Bald auf der Rigi 🏔️👑\nDein RigiBeats Team ❤️"
-
-df = pd.read_excel(
-    "/Users/mw/Documents/send-mails/eventfrog-ticketexport.xlsx", sheet_name="Tickets"
-)
-email_adresses = df["E-Mail"].tolist()
 
 # Python code to illustrate Sending mail with attachments
 # from your Gmail account
@@ -32,29 +29,61 @@ for toaddr in tqdm(email_adresses):
 
     tqdm.write(f"Number {counter}: {toaddr}")
 
+    vorname = df["Vorname:"].tolist()[counter - 1].capitalize()
+    if df["Geschlecht:"].tolist()[counter - 1] == "Weiblich":
+        Anrede = "Liebe"
+    else:
+        Anrede = "Lieber"
+
+    subject = "Weihnachtsgrüsse von der Flusswelle Muota!"
+    body = f"""
+    <html>
+        <body>
+            <p>{Anrede} {vorname},</p>
+            <p>wir hoffen, dass diese Nachricht dich in bester Gesundheit erreicht und du eine schöne Vorweihnachtszeit hast. Wir wünschen frohe Weihnachten und ein strahlendes neues Jahr! Möge diese Zeit des Jahres mit Freude, Wärme und unvergesslichen Momenten mit deinen Liebsten gefüllt sein.</p>
+            <p>Es gibt Updates bezüglich der Flusswelle: Der geplante Abriss der Muota Flusswelle wird nach wie vor vorangetrieben (EBS & Bezirk Schwyz). Allerdings konnten wir dank der Unterstützung dieses Vereins und euch als geschätzte Mitglieder Argumente vorbringen, die zu einem Gespräch mit den Projektverantwortlichen geführt haben. Der nächste Schritt besteht nun darin, auszuarbeiten, wie eine "neue" Welle im Rahmen des Projekts realisiert werden könnte.</p>
+            <p>In diesem Sinne möchten wir euch herzlich danken. Gemeinsam machen wir die Flusswelle Muota zu einem Ort der Begeisterung und des Austauschs für Wassersportliebhaber. Wir freuen uns auf ein aufregendes neues Jahr voller Wellen und spannender Momente!</p>
+            <p>Frohe Feiertage und einen fantastischen Start ins neue Jahr!</p>
+            <p>P.S. Anbei findest du unsere Stellungnahme zum Vorprojekt des Bezirks Schwyz.</p>
+            <p>Weihnachtliche Grüsse 🎅,<br>
+            Flusswelle 🌊 Muota</p>
+            <br>
+            <img src="cid:image1">
+        </body>
+    </html>
+    """
+
     msg = MIMEMultipart()
     msg["From"] = FROM
     msg["To"] = toaddr
     msg["Subject"] = subject
-    msg.attach(MIMEText(body, "plain"))
+    msg.attach(MIMEText(body, "html"))
 
-    # # open the file to be sent
-    # filename = "File_name_with_extension.pdf"
-    # attachment = open("/Users/mw/Downloads/dummy.pdf", "rb")
+    with open("/Users/mw/Documents/send-mails/img.jpeg", "rb") as fp:
+        img = MIMEImage(fp.read())
+        img.add_header("Content-ID", "<image1>")
+        msg.attach(img)
+
+    # open the file to be sent
+    filename = "Stellungnahme_Vorprojekt_Bezirk_Schwyz.pdf"
+    attachment = open(
+        "/Users/mw/Documents/send-mails/Stellungnahme_Vorprojekt_Bezirk_Schwyz.pdf",
+        "rb",
+    )
 
     # instance of MIMEBase and named as p
-    # p = MIMEBase("application", "octet-stream")
+    p = MIMEBase("application", "octet-stream")
 
     # To change the payload into encoded form
-    # p.set_payload((attachment).read())
+    p.set_payload((attachment).read())
 
     # encode into base64
-    # encoders.encode_base64(p)
+    encoders.encode_base64(p)
 
-    # p.add_header("Content-Disposition", "attachment; filename= %s" % filename)
+    p.add_header("Content-Disposition", "attachment; filename= %s" % filename)
 
     # attach the instance 'p' to instance 'msg'
-    # msg.attach(p)
+    msg.attach(p)
 
     # creates SMTP session
     s = smtplib.SMTP("smtp.gmail.com", 587)

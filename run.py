@@ -52,6 +52,21 @@ for toaddr in tqdm(email_adresses):
         </body>
     </html>
     """
+    subject = "Rücknahme zu viel gekaufter Tickets - RigiBeats 2024"
+    body = """
+    <html>
+        <body>
+            <p>👋 Hallo lieber Gast!,</p>
+            <p>wir können es kaum erwarten, dich am 20.01.2024 auf der Rigi zu begrüssen und gemeinsam ein unvergessliches Event zu erleben! 🎉 </p>
+            <p>In Anbetracht des grossen Interesses und des Ansturms auf die Tickets, möchten wir sicherstellen, dass jeder Gast die Möglichkeit hat, seine Tickets entsprechend anzupassen. </p>
+            <p>Wenn du mehr Tickets gekauft hast, als du benötigst, kannst du diese bis zum 18.01.2024 um 18:00 Uhr gratis zurückgeben. Wir werden diese erneut in Umlauf bringen. </p>
+            <p>Der Prozess dafür ist ganz einfach – schicke uns einfach eine E-Mail mit den betroffenen Ticket-IDs an rigibeats.ch@gmail.com. Unser Team wird sich umgehend darum kümmern und die Rückerstattung für die überzähligen Tickets veranlassen. </p>
+            <p>Wir bedanken uns für dein Verständnis und deine Mitarbeit in dieser Angelegenheit. Unser Ziel ist es, sicherzustellen, dass jeder Gast die bestmögliche Erfahrung bei unserem Event hat. </p>
+            <p>Wir freuen uns schon riesig darauf, dich bald auf der Rigi zu sehen und gemeinsam eine grossartige Zeit zu haben! </p>
+            <p>Dein RigiBeats Team ❤️</p>
+        </body>
+    </html>
+    """
 
     msg = MIMEMultipart()
     msg["From"] = FROM

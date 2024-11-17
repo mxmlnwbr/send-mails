@@ -176,7 +176,7 @@ df, email_list = read_email_addresses(
 
 # Markdown Email Body
 markdown_body = """
-# Hello, Maximilian!
+Hi! 👋
 
 This is a **test email** with *Markdown* formatting and attachments.
 
@@ -185,8 +185,8 @@ This is a **test email** with *Markdown* formatting and attachments.
 
 [Click here for more info](https://example.com).
 
-Best regards,  
-**Your Team**
+Liebe Grüsse  
+Max vom Rigibeats Team 👑🏔️❤️
 """
 
 # File Attachments (from /attachments folder)

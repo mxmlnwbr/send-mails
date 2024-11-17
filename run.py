@@ -67,7 +67,7 @@ This is a **test email** with *Markdown* formatting.
 
 [Click here for more info](https://example.com).
 
-Liebe Grüsse
+Liebe Grüsse  
 Max von Rigibeats Team 👑🏔️
 """
 

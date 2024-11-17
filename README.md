@@ -2,18 +2,11 @@
 
 **Send-Mails** is a Python-based email-sending utility that enables you to easily send emails using SMTP servers. This project supports environment-based configuration and allows sending both plain text and multipart messages.
 
-## Features
-
-- **SMTP Support**: Works with configurable SMTP servers.
-- **Environment Variables**: Securely stores sensitive credentials.
-- **Multipart Emails**: Supports plain text and HTML content.
-- **Ease of Use**: A simple and clean function for sending emails.
-
 ## Prerequisites
 
 - Python 3.7 or higher
-- A valid SMTP account (e.g., Gmail, Outlook)
-- The `dotenv` package for managing environment variables
+- A valid SMTP account (e.g., Infomaniak, Gmail, Outlook)
+- Poetry
 
 ## Installation
 
@@ -49,7 +42,6 @@
 
 ## File Structure
 
-    ```
     send-mails/
     ├── run.py # Main script containing the email-sending logic
     ├── .env # Environment variables (ignored by version control)
@@ -57,4 +49,3 @@
     ├── poetry.lock # Project dependencies
     ├── pyprohect.toml # Project dependencies
     └── README.md # Project documentation
-    ```

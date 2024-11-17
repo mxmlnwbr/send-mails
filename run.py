@@ -1,9 +1,11 @@
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email.mime.base import MIMEBase
+from email import encoders
 import os
 from dotenv import load_dotenv
-import markdown  # Import markdown to convert Markdown to HTML
+import markdown
 from tqdm import tqdm
 
 # Load environment variables
@@ -16,14 +18,15 @@ EMAIL_ADDRESS = os.getenv("SMTP_ACCOUNT")
 EMAIL_PASSWORD = os.getenv("SMTP_PASSWORD")
 
 
-def send_emails(to_emails, subject, markdown_body):
+def send_emails(to_emails, subject, markdown_body, attachments=None):
     """
-    Sends an email to a list of recipients with a Markdown-formatted body.
+    Sends an email to a list of recipients with optional attachments.
 
     Args:
         to_emails (list): A list of email addresses to send the email to.
         subject (str): The subject of the email.
         markdown_body (str): The email body written in Markdown format.
+        attachments (list): A list of filenames (from /attachments folder) to attach (default: None).
     """
     # Convert Markdown to HTML
     html_body = markdown.markdown(markdown_body)
@@ -44,7 +47,29 @@ def send_emails(to_emails, subject, markdown_body):
                 msg["From"] = EMAIL_ADDRESS
                 msg["To"] = to_email
                 msg["Subject"] = subject
+
+                # Attach the email body
                 msg.attach(MIMEText(html_body, "html"))
+
+                # Add attachments if any
+                if attachments:
+                    for filename in attachments:
+                        file_path = os.path.join(
+                            "attachments", filename
+                        )  # Construct path
+                        try:
+                            with open(file_path, "rb") as attachment:
+                                part = MIMEBase("application", "octet-stream")
+                                part.set_payload(attachment.read())
+                            encoders.encode_base64(part)  # Encode file as Base64
+                            part.add_header(
+                                "Content-Disposition",
+                                f"attachment; filename={filename}",
+                            )
+                            msg.attach(part)
+                            tqdm.write(f"Attached file: {filename}")
+                        except Exception as e:
+                            tqdm.write(f"Failed to attach file {filename}: {e}")
 
                 # Send the email
                 server.send_message(msg)
@@ -58,17 +83,20 @@ email_list = ["maximilian.weber@bluewin.ch", "mxjweber@gmail.com"]
 
 # Markdown Email Body
 markdown_body = """
-Hi! 👋
+# Hello, Maximilian!
 
-This is a **test email** with *Markdown* formatting.
+This is a **test email** with *Markdown* formatting and attachments.
 
 - Item 1
-- **Item 2**
+- Item 2
 
 [Click here for more info](https://example.com).
 
-Liebe Grüsse  
-Max von Rigibeats Team 👑🏔️
+Best regards,  
+**Your Team**
 """
 
-send_emails(email_list, "Test Markdown Email", markdown_body)
+# File Attachments (from /attachments folder)
+attachments = ["example.pdf", "image.png"]  # Just filenames, not full paths
+
+send_emails(email_list, "Test Email with Attachments", markdown_body, attachments)

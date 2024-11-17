@@ -3,6 +3,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import os
 from dotenv import load_dotenv
+from tqdm import tqdm  # Import tqdm for the loading bar
 
 # Load environment variables
 load_dotenv()
@@ -29,8 +30,11 @@ def send_emails(to_emails, subject, body):
             server.starttls()  # Upgrade the connection to secure
             server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
 
-            # Send email to each recipient
-            for to_email in to_emails:
+            # Send email to each recipient with a progress bar
+            for to_email in tqdm(to_emails, desc="Sending Emails", unit="email"):
+                # Display the email address being sent
+                tqdm.write(f"Sending email to: {to_email}")
+
                 # Create the email for each recipient
                 msg = MIMEMultipart()
                 msg["From"] = EMAIL_ADDRESS
@@ -40,7 +44,6 @@ def send_emails(to_emails, subject, body):
 
                 # Send the email
                 server.send_message(msg)
-                print(f"Email sent successfully to {to_email}!")
 
     except Exception as e:
         print(f"Failed to send emails: {e}")

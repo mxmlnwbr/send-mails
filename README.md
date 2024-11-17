@@ -49,7 +49,7 @@
 
 ## File Structure
 
-    ```bash
+    ```
     send-mails/
     ├── run.py # Main script containing the email-sending logic
     ├── .env # Environment variables (ignored by version control)
@@ -58,9 +58,3 @@
     ├── pyprohect.toml # Project dependencies
     └── README.md # Project documentation
     ```
-
-```
-function test() {
-  console.log("This code will have a copy button to the right of it");
-}
-```

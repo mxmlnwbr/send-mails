@@ -3,7 +3,8 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import os
 from dotenv import load_dotenv
-from tqdm import tqdm  # Import tqdm for the loading bar
+import markdown  # Import markdown to convert Markdown to HTML
+from tqdm import tqdm
 
 # Load environment variables
 load_dotenv()
@@ -15,15 +16,18 @@ EMAIL_ADDRESS = os.getenv("SMTP_ACCOUNT")
 EMAIL_PASSWORD = os.getenv("SMTP_PASSWORD")
 
 
-def send_emails(to_emails, subject, body):
+def send_emails(to_emails, subject, markdown_body):
     """
-    Sends an email to a list of recipients.
+    Sends an email to a list of recipients with a Markdown-formatted body.
 
     Args:
         to_emails (list): A list of email addresses to send the email to.
         subject (str): The subject of the email.
-        body (str): The body of the email.
+        markdown_body (str): The email body written in Markdown format.
     """
+    # Convert Markdown to HTML
+    html_body = markdown.markdown(markdown_body)
+
     try:
         # Connect to the SMTP server
         with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
@@ -40,7 +44,7 @@ def send_emails(to_emails, subject, body):
                 msg["From"] = EMAIL_ADDRESS
                 msg["To"] = to_email
                 msg["Subject"] = subject
-                msg.attach(MIMEText(body, "plain"))
+                msg.attach(MIMEText(html_body, "html"))
 
                 # Send the email
                 server.send_message(msg)
@@ -51,4 +55,20 @@ def send_emails(to_emails, subject, body):
 
 # Usage
 email_list = ["maximilian.weber@bluewin.ch", "mxjweber@gmail.com"]
-send_emails(email_list, "Test Subject", "This is a test email body.")
+
+# Markdown Email Body
+markdown_body = """
+Hello, Maximilian! 👋
+
+This is a **test email** with *Markdown* formatting.
+
+- Item 1
+- Item 2
+
+[Click here for more info](https://example.com).
+
+Best regards,  
+**Your Team 👑🏔️❤️**
+"""
+
+send_emails(email_list, "Test Markdown Email", markdown_body)

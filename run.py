@@ -7,15 +7,47 @@ import os
 from dotenv import load_dotenv
 import markdown
 from tqdm import tqdm
+import logging
 
 # Load environment variables
 load_dotenv()
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 
 # SMTP Configuration
 SMTP_SERVER = os.getenv("SMTP_SERVER")
 SMTP_PORT = 587  # Using 587 for TLS
 EMAIL_ADDRESS = os.getenv("SMTP_ACCOUNT")
 EMAIL_PASSWORD = os.getenv("SMTP_PASSWORD")
+
+ATTACHMENTS_FOLDER = "attachments"  # Define the attachment folder
+
+
+def add_attachments(msg, attachments):
+    """
+    Add attachments to the email.
+
+    Args:
+        msg (MIMEMultipart): The email message object.
+        attachments (list): A list of filenames to attach (located in ATTACHMENTS_FOLDER).
+    """
+    for filename in attachments:
+        file_path = os.path.join(ATTACHMENTS_FOLDER, filename)
+        try:
+            with open(file_path, "rb") as attachment:
+                part = MIMEBase("application", "octet-stream")
+                part.set_payload(attachment.read())
+            encoders.encode_base64(part)
+            part.add_header("Content-Disposition", f"attachment; filename={filename}")
+            msg.attach(part)
+            logging.info(f"Attached file: {filename}")
+        except FileNotFoundError:
+            logging.warning(f"Attachment file not found: {filename}")
+        except Exception as e:
+            logging.error(f"Error attaching file {filename}: {e}")
 
 
 def send_emails(to_emails, subject, markdown_body, attachments=None):
@@ -26,7 +58,7 @@ def send_emails(to_emails, subject, markdown_body, attachments=None):
         to_emails (list): A list of email addresses to send the email to.
         subject (str): The subject of the email.
         markdown_body (str): The email body written in Markdown format.
-        attachments (list): A list of filenames (from /attachments folder) to attach (default: None).
+        attachments (list): A list of filenames to attach (default: None).
     """
     # Convert Markdown to HTML
     html_body = markdown.markdown(markdown_body)
@@ -39,8 +71,7 @@ def send_emails(to_emails, subject, markdown_body, attachments=None):
 
             # Send email to each recipient with a progress bar
             for to_email in tqdm(to_emails, desc="Sending Emails", unit="email"):
-                # Display the email address being sent
-                tqdm.write(f"Sending email to: {to_email}")
+                logging.info(f"Sending email to: {to_email}")
 
                 # Create the email for each recipient
                 msg = MIMEMultipart()
@@ -53,29 +84,14 @@ def send_emails(to_emails, subject, markdown_body, attachments=None):
 
                 # Add attachments if any
                 if attachments:
-                    for filename in attachments:
-                        file_path = os.path.join(
-                            "attachments", filename
-                        )  # Construct path
-                        try:
-                            with open(file_path, "rb") as attachment:
-                                part = MIMEBase("application", "octet-stream")
-                                part.set_payload(attachment.read())
-                            encoders.encode_base64(part)  # Encode file as Base64
-                            part.add_header(
-                                "Content-Disposition",
-                                f"attachment; filename={filename}",
-                            )
-                            msg.attach(part)
-                            tqdm.write(f"Attached file: {filename}")
-                        except Exception as e:
-                            tqdm.write(f"Failed to attach file {filename}: {e}")
+                    add_attachments(msg, attachments)
 
                 # Send the email
                 server.send_message(msg)
+                logging.info(f"Email successfully sent to {to_email}")
 
     except Exception as e:
-        print(f"Failed to send emails: {e}")
+        logging.error(f"Failed to send emails: {e}")
 
 
 # Usage

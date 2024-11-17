@@ -1,4 +1,4 @@
 .env
-*.xlsx
 .DS_Store
-/files
+/data
+/attachments

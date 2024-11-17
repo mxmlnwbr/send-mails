@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 import markdown
 from tqdm import tqdm
 import logging
+import pandas as pd
 
 # Load environment variables
 load_dotenv()
@@ -24,6 +25,32 @@ EMAIL_ADDRESS = os.getenv("SMTP_ACCOUNT")
 EMAIL_PASSWORD = os.getenv("SMTP_PASSWORD")
 
 ATTACHMENTS_FOLDER = "attachments"  # Define the attachment folder
+DATA_FOLDER = "data"  # Define the data folder
+
+
+def read_email_addresses(excel_filename):
+    """
+    Reads email addresses from an Excel file.
+
+    Args:
+        excel_filename (str): The name of the Excel file (located in the 'data' folder).
+
+    Returns:
+        list: A list of email addresses.
+    """
+    try:
+        file_path = os.path.join(DATA_FOLDER, excel_filename)
+        # Read the Excel file using pandas
+        df = pd.read_excel(file_path)
+
+        # Assuming the email addresses are in the first column, and the column header is 'Email'
+        email_addresses = df["Email"].dropna().tolist()  # Drop NaN values if any
+        logging.info(f"Successfully read {len(email_addresses)} email addresses.")
+        return email_addresses
+
+    except Exception as e:
+        logging.error(f"Error reading email addresses from {excel_filename}: {e}")
+        return []
 
 
 def add_attachments(msg, attachments):
@@ -94,8 +121,8 @@ def send_emails(to_emails, subject, markdown_body, attachments=None):
         logging.error(f"Failed to send emails: {e}")
 
 
-# Usage
-email_list = ["maximilian.weber@bluewin.ch", "mxjweber@gmail.com"]
+# Read email addresses from the Excel file located in the 'data' folder
+email_list = read_email_addresses("email_list.xlsx")  # Replace with the actual filename
 
 # Markdown Email Body
 markdown_body = """
@@ -115,4 +142,7 @@ Best regards,
 # File Attachments (from /attachments folder)
 attachments = ["example.pdf", "image.png"]  # Just filenames, not full paths
 
-send_emails(email_list, "Test Email with Attachments", markdown_body, attachments)
+if email_list:
+    send_emails(email_list, "Test Email with Attachments", markdown_body, attachments)
+else:
+    logging.warning("No email addresses found. Please check the Excel file.")

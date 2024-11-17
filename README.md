@@ -44,7 +44,7 @@
 
     send-mails/
     ├── run.py # Main script containing the email-sending logic
-    ├── .env # Environment variables (ignored by version control)
+    ├── .env.template # Environment variables template (rename to .env and fill in the variables)
     ├── .gitignore
     ├── poetry.lock # Project dependencies
     ├── pyprohect.toml # Project dependencies

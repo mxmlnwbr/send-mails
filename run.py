@@ -58,17 +58,17 @@ email_list = ["maximilian.weber@bluewin.ch", "mxjweber@gmail.com"]
 
 # Markdown Email Body
 markdown_body = """
-Hello, Maximilian! 👋
+Hi! 👋
 
 This is a **test email** with *Markdown* formatting.
 
 - Item 1
-- Item 2
+- **Item 2**
 
 [Click here for more info](https://example.com).
 
-Best regards,  
-**Your Team 👑🏔️❤️**
+Liebe Grüsse
+Max von Rigibeats Team 👑🏔️
 """
 
 send_emails(email_list, "Test Markdown Email", markdown_body)

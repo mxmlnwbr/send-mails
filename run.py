@@ -207,7 +207,7 @@ This is a **test email** with *Markdown* formatting and attachments.
 Liebe Grüsse  
 Max vom Rigibeats Team 👑🏔️❤️
 
-![Alt text](https://raw.githubusercontent.com/mxmlnwbr/send-mails/refs/heads/main/inBodyImages/inline_image.jpg?token=GHSAT0AAAAAACZVSUFDEC7ABDBOBSKKZ6ASZZ3PFGQ "test img")
+![Alt text](https://raw.githubusercontent.com/mxmlnwbr/send-mails/refs/heads/main/inBodyImages/inline_image.jpg?token=GHSAT0AAAAAACZVSUFDYTJV3NQ43POPQKPEZZ3PYBQ "test img")
 """
 
 # Dynamically retrieve attachments

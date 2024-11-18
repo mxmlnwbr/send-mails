@@ -61,6 +61,25 @@ def read_email_addresses(excel_filename):
         return None, []
 
 
+def get_all_attachments():
+    """
+    Retrieves all filenames in the ATTACHMENTS_FOLDER, excluding hidden files (those starting with a dot).
+
+    Returns:
+        list: A list of filenames in the ATTACHMENTS_FOLDER.
+    """
+    try:
+        return [
+            f
+            for f in os.listdir(ATTACHMENTS_FOLDER)
+            if os.path.isfile(os.path.join(ATTACHMENTS_FOLDER, f))
+            and not f.startswith(".")
+        ]
+    except Exception as e:
+        logging.error(f"Error retrieving attachments: {e}")
+        return []
+
+
 def update_sent_status(df, email):
     """
     Updates the 'Sent' status for an email in the dataframe to 'Yes'.
@@ -191,8 +210,8 @@ Max vom Rigibeats Team 👑🏔️❤️
 ![Alt text](https://raw.githubusercontent.com/mxmlnwbr/send-mails/refs/heads/main/images/inline_image.jpg?token=GHSAT0AAAAAACZVSUFDEC7ABDBOBSKKZ6ASZZ3PFGQ "test img")
 """
 
-# File Attachments (from /attachments folder)
-attachments = ["example.pdf", "image.png"]  # Just filenames, not full paths
+# Dynamically retrieve attachments
+attachments = get_all_attachments()
 
 if email_list:
     send_emails(

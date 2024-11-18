@@ -188,7 +188,7 @@ This is a **test email** with *Markdown* formatting and attachments.
 Liebe Grüsse  
 Max vom Rigibeats Team 👑🏔️❤️
 
-![Alt text](https://upload.wikimedia.org/wikipedia/commons/b/bd/Test.svg "test img")
+![Alt text](https://raw.githubusercontent.com/mxmlnwbr/send-mails/refs/heads/main/images/inline_image.jpg?token=GHSAT0AAAAAACZVSUFDEC7ABDBOBSKKZ6ASZZ3PFGQ "test img")
 """
 
 # File Attachments (from /attachments folder)

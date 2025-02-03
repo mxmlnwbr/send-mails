@@ -189,7 +189,7 @@ def send_personalized_email(df, row_index, subject_template, markdown_body_templ
 
 
 # Read email addresses from the Excel file
-df, _ = read_email_addresses("Ticketversandt.xlsx")
+df, _ = read_email_addresses("email_list.xlsx")
 
 if df is not None:
     # Get attachments

@@ -132,90 +132,96 @@ def add_attachments(msg, attachments):
             logging.error(f"Error attaching file {filename}: {e}")
 
 
-def send_emails(df, to_emails, subject, markdown_body, attachments=None):
+def send_personalized_email(df, row_index, subject_template, markdown_body_template, attachments=None):
     """
-    Sends an email to a list of recipients with optional attachments.
+    Sends a personalized email to a single recipient based on their row data.
 
     Args:
-        df (DataFrame): The dataframe containing email addresses and their 'Sent' status.
-        to_emails (list): A list of email addresses to send the email to.
-        subject (str): The subject of the email.
-        markdown_body (str): The email body written in Markdown format.
-        attachments (list): A list of filenames to attach (default: None).
+        df (DataFrame): The dataframe containing email addresses and their data
+        row_index (int): The index of the row to process
+        subject_template (str): The template for the email subject with placeholders
+        markdown_body_template (str): The template for the email body with placeholders
+        attachments (list): A list of filenames to attach (default: None)
     """
-    # Convert Markdown to HTML
-    html_body = markdown.markdown(markdown_body)
+    row = df.iloc[row_index]
+    to_email = row["Email"]
+
+    # Skip if already sent
+    if row[SENT_COLUMN_NAME] == "Yes":
+        logging.info(f"Email already sent to {to_email}. Skipping.")
+        return
 
     try:
-        # Connect to the SMTP server
+        # Create a copy of the row data and modify the Name to first name only
+        row_data = row.to_dict()
+        row_data["Name"] = row_data["Name"].split()[0]  # Get first name only
+
+        # Replace placeholders in subject and body with row data
+        subject = subject_template.format(**row_data)
+        personalized_body = markdown_body_template.format(**row_data)
+        html_body = markdown.markdown(personalized_body)
+
+        # Create and send the email
         with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
-            server.starttls()  # Upgrade the connection to secure
+            server.starttls()
             server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
 
-            # Send email to each recipient with a progress bar
-            for to_email in tqdm(to_emails, desc="Sending Emails", unit="email"):
-                # Skip emails that have already been sent
-                if df.loc[df["Email"] == to_email, SENT_COLUMN_NAME].values[0] == "Yes":
-                    logging.info(f"Email already sent to {to_email}. Skipping.")
-                    continue
+            msg = MIMEMultipart()
+            msg["From"] = EMAIL_ADDRESS
+            msg["To"] = to_email
+            msg["Subject"] = subject
+            msg["Bcc"] = "hi@rigibeats.ch"  # Add BCC
 
-                logging.info(f"Sending email to: {to_email}")
+            msg.attach(MIMEText(html_body, "html"))
 
-                # Create the email for each recipient
-                msg = MIMEMultipart()
-                msg["From"] = EMAIL_ADDRESS
-                msg["To"] = to_email
-                msg["Subject"] = subject
+            if attachments:
+                add_attachments(msg, attachments)
 
-                # Attach the email body
-                msg.attach(MIMEText(html_body, "html"))
+            server.send_message(msg)
+            logging.info(f"Email successfully sent to {to_email}")
 
-                # Add attachments if any
-                if attachments:
-                    add_attachments(msg, attachments)
-
-                # Send the email
-                server.send_message(msg)
-                logging.info(f"Email successfully sent to {to_email}")
-
-                # Mark this email as sent in the dataframe
-                update_sent_status(df, to_email)
-
-                # Save the updated dataframe after each email to avoid losing progress
-                save_updated_excel(df, "email_list.xlsx")
+            # Mark as sent and save
+            update_sent_status(df, to_email)
+            save_updated_excel(df, "email_list.xlsx")
 
     except Exception as e:
-        logging.error(f"Failed to send emails: {e}")
+        logging.error(f"Failed to send email to {to_email}: {e}")
 
 
-# Read email addresses from the Excel file located in the 'data' folder
-df, email_list = read_email_addresses(
-    "email_list.xlsx"
-)  # Replace with the actual filename
+# Read email addresses from the Excel file
+df, _ = read_email_addresses("Ticketversandt.xlsx")
 
-# Markdown Email Body
-markdown_body = """
-Hi! 👋
+if df is not None:
+    # Get attachments
+    attachments = get_all_attachments()
+    
+    # Email templates with placeholders
+    subject_template = "RigiBeats 2025 - Helferinfo für {Name}"  # Assuming 'Name' column exists
+    
+    markdown_body_template = """
+    Hey {Name}! 👋
 
-This is a **test email** with *Markdown* formatting and attachments.
+    Erstmal danke für deine Unterstützung bei unserem Event. 🎉
+    Ohne euch wäre das RigiBeats 2025 schlichtweg nicht möglich.
 
-- Item 1
-- Item 2
+    Anbei schicke ich dir den Zugangscode für den Bezug deines gratis Rigibeats 2025 Tickets.
 
-[Click here for more info](https://example.com).
+    Zugangscode:
+    
+    - {Code} 
 
-Liebe Grüsse  
-Max vom Rigibeats Team 👑🏔️❤️
+    Einfach auf www.eventfrog.ch/rigibeats eingeben und unter den freigeschalteten Kategorien auswählen.
 
-![Alt text](https://raw.githubusercontent.com/mxmlnwbr/send-mails/refs/heads/main/inBodyImages/inline_image.jpg?token=GHSAT0AAAAAACZVSUFDYTJV3NQ43POPQKPEZZ3PYBQ "test img")
-"""
+    Bei Fragen, einfach fragen! 🤗
 
-# Dynamically retrieve attachments
-attachments = get_all_attachments()
+    Liebe Grüsse & bis Samstag!
+    Max vom Rigibeats Team 👑🏔️❤️
+    """
 
-if email_list:
-    send_emails(
-        df, email_list, "Test Email with Attachments", markdown_body, attachments
-    )
+    # Process each row
+    for index in tqdm(range(len(df)), desc="Processing entries", unit="email"):
+        send_personalized_email(df, index, subject_template, markdown_body_template, attachments)
+        
+    print("All emails have been processed!")
 else:
-    logging.warning("No email addresses found. Please check the Excel file.")
+    print("Failed to read the Excel file. Please check the file path and format.")

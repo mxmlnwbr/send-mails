@@ -49,7 +49,7 @@ def read_email_addresses(excel_filename):
             logging.info(f"Added '{SENT_COLUMN_NAME}' column to the Excel file.")
 
         # Filter the email addresses that are not sent yet (i.e., 'Sent' == 'No')
-        email_addresses = df[df[SENT_COLUMN_NAME] != "Yes"]["Email"].dropna().tolist()
+        email_addresses = df[df[SENT_COLUMN_NAME] != "Yes"]["E-mail"].dropna().tolist()
         logging.info(
             f"Successfully read {len(email_addresses)} email addresses that need to be sent."
         )
@@ -87,7 +87,7 @@ def update_sent_status(df, email):
         df (DataFrame): The dataframe containing email addresses.
         email (str): The email address to mark as sent.
     """
-    df.loc[df["Email"] == email, SENT_COLUMN_NAME] = "Yes"
+    df.loc[df["E-mail"] == email, SENT_COLUMN_NAME] = "Yes"
     logging.info(f"Marked {email} as sent.")
 
 
@@ -143,17 +143,17 @@ def send_personalized_email(df, row_index, subject_template, html_body_template,
         attachments (list): A list of filenames to attach (default: None)
     """
     row = df.iloc[row_index]
-    to_email = row["Email"]
+    to_email = row["E-mail"]
 
     # Skip if already sent
     if row[SENT_COLUMN_NAME] == "Yes":
-        logging.info(f"Email already sent to {to_email}. Skipping.")
+        logging.info(f"E-mail already sent to {to_email}. Skipping.")
         return
 
     try:
-        # Create a copy of the row data and modify the Name to first name only
+        # Create a copy of the row data and modify the Vorname to first name only
         row_data = row.to_dict()
-        row_data["Name"] = row_data["Name"].split()[0]  # Get first name only
+        row_data["Vorname"] = row_data["Vorname"].split()[0]  # Get first name only
 
         # Replace placeholders in subject and body with row data
         subject = subject_template.format(**row_data)
@@ -177,7 +177,7 @@ def send_personalized_email(df, row_index, subject_template, html_body_template,
             server.starttls()
             server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
             server.send_message(msg)
-            logging.info(f"Email successfully sent to {to_email}")
+            logging.info(f"E-mail successfully sent to {to_email}")
 
             # Mark as sent and save
             update_sent_status(df, to_email)
@@ -194,11 +194,11 @@ if df is not None:
     # Get attachments
     attachments = get_all_attachments()
     
-    # Email templates with placeholders
+    # E-mail templates with placeholders
     subject_template = "RigiBeats 2025 Feedback"
     
     html_body_template = """
-    <p>Hey {Name}! 👋</p>
+    <p>Hey {Vorname}! 👋</p>
 
     <p><strong>Rigibeats 2025 ist Geschichte! 🎉</strong></p>
 

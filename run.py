@@ -5,7 +5,6 @@ from email.mime.base import MIMEBase
 from email import encoders
 import os
 from dotenv import load_dotenv
-import markdown
 from tqdm import tqdm
 import logging
 import pandas as pd
@@ -132,7 +131,7 @@ def add_attachments(msg, attachments):
             logging.error(f"Error attaching file {filename}: {e}")
 
 
-def send_personalized_email(df, row_index, subject_template, markdown_body_template, attachments=None):
+def send_personalized_email(df, row_index, subject_template, html_body_template, attachments=None):
     """
     Sends a personalized email to a single recipient based on their row data.
 
@@ -140,7 +139,7 @@ def send_personalized_email(df, row_index, subject_template, markdown_body_templ
         df (DataFrame): The dataframe containing email addresses and their data
         row_index (int): The index of the row to process
         subject_template (str): The template for the email subject with placeholders
-        markdown_body_template (str): The template for the email body with placeholders
+        html_body_template (str): The template for the email body with placeholders
         attachments (list): A list of filenames to attach (default: None)
     """
     row = df.iloc[row_index]
@@ -158,25 +157,25 @@ def send_personalized_email(df, row_index, subject_template, markdown_body_templ
 
         # Replace placeholders in subject and body with row data
         subject = subject_template.format(**row_data)
-        personalized_body = markdown_body_template.format(**row_data)
-        html_body = markdown.markdown(personalized_body)
+        personalized_body = html_body_template.format(**row_data)
+
+        # Create the email message
+        msg = MIMEMultipart('alternative')
+        msg["From"] = EMAIL_ADDRESS
+        msg["To"] = to_email
+        msg["Subject"] = subject
+        msg["Bcc"] = "hi@rigibeats.ch"  # Add BCC
+
+        # Add HTML content
+        msg.attach(MIMEText(personalized_body, 'html', 'utf-8'))
+
+        if attachments:
+            add_attachments(msg, attachments)
 
         # Create and send the email
         with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
             server.starttls()
             server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
-
-            msg = MIMEMultipart()
-            msg["From"] = EMAIL_ADDRESS
-            msg["To"] = to_email
-            msg["Subject"] = subject
-            msg["Bcc"] = "hi@rigibeats.ch"  # Add BCC
-
-            msg.attach(MIMEText(html_body, "html"))
-
-            if attachments:
-                add_attachments(msg, attachments)
-
             server.send_message(msg)
             logging.info(f"Email successfully sent to {to_email}")
 
@@ -196,29 +195,29 @@ if df is not None:
     attachments = get_all_attachments()
     
     # Email templates with placeholders
-    subject_template = "RigiBeats 2025 Feedback"  # Assuming 'Name' column exists
+    subject_template = "RigiBeats 2025 Feedback"
     
-    markdown_body_template = """
-    Hey {Name}! 👋
+    html_body_template = """
+    <p>Hey {Name}! 👋</p>
 
-    **Rigibeats 2025 ist Geschichte! 🎉**  
+    <p><strong>Rigibeats 2025 ist Geschichte! 🎉</strong></p>
 
-    Leider hat uns der Föhn dieses Jahr einen Strich durch die Rechnung gemacht, doch das haltet uns nicht auf! 
-    Ein riesiges Dankeschön an alle, die am Sonntag dabei waren – die Stimmung war einfach fantastisch! 
-    Ihr seid die beste Community, und für das sagen wir: **Danke!** 🥳  
+    <p>Leider hat uns der Föhn dieses Jahr einen Strich durch die Rechnung gemacht, doch das haltet uns nicht auf!<br>
+    Ein riesiges Dankeschön an alle, die am Sonntag dabei waren – die Stimmung war einfach fantastisch!<br>
+    Ihr seid die beste Community, und für das sagen wir: <strong>Danke!</strong> 🥳</p>
 
-    Euer Feedback ist uns wichtig!  
-    Nehmt euch kurz Zeit für unsere Umfrage (dauert maximal 5 Minuten):
+    <p>Euer Feedback ist uns wichtig  – egal, ob ihr dabei wart oder nicht!<br>
+    Nehmt euch kurz Zeit für unsere Umfrage (dauert maximal 5 Minuten):</p>
 
-    [Rigibeats 2025 Feedback](https://docs.google.com/forms/d/e/1FAIpQLSdONIpMxHbSyKgNwAxrHwMj0Y4-yRbpgKjYPi9vIuta2r0XwQ/viewform?usp=dialog)
+    <p><a href="https://docs.google.com/forms/d/e/1FAIpQLSdONIpMxHbSyKgNwAxrHwMj0Y4-yRbpgKjYPi9vIuta2r0XwQ/viewform?usp=dialog">Rigibeats 2025 Feedback</a></p>
 
-    Liebe Grüsse
-    Max vom Rigibeats Team 👑🏔️❤️‍🔥
+    <p>Liebe Grüsse<br>
+    Max vom Rigibeats Team 👑🏔️❤️‍🔥</p>
     """
 
     # Process each row
     for index in tqdm(range(len(df)), desc="Processing entries", unit="email"):
-        send_personalized_email(df, index, subject_template, markdown_body_template, attachments)
+        send_personalized_email(df, index, subject_template, html_body_template, attachments)
         
     print("All emails have been processed!")
 else:

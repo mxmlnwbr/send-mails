@@ -49,7 +49,7 @@ def read_email_addresses(excel_filename):
             logging.info(f"Added '{SENT_COLUMN_NAME}' column to the Excel file.")
 
         # Filter the email addresses that are not sent yet (i.e., 'Sent' == 'No')
-        email_addresses = df[df[SENT_COLUMN_NAME] != "Yes"]["E-mail"].dropna().tolist()
+        email_addresses = df[df[SENT_COLUMN_NAME] != "Yes"]["E-Mail"].dropna().tolist()
         logging.info(
             f"Successfully read {len(email_addresses)} email addresses that need to be sent."
         )
@@ -87,7 +87,7 @@ def update_sent_status(df, email):
         df (DataFrame): The dataframe containing email addresses.
         email (str): The email address to mark as sent.
     """
-    df.loc[df["E-mail"] == email, SENT_COLUMN_NAME] = "Yes"
+    df.loc[df["E-Mail"] == email, SENT_COLUMN_NAME] = "Yes"
     logging.info(f"Marked {email} as sent.")
 
 
@@ -143,11 +143,11 @@ def send_personalized_email(df, row_index, subject_template, html_body_template,
         attachments (list): A list of filenames to attach (default: None)
     """
     row = df.iloc[row_index]
-    to_email = row["E-mail"]
+    to_email = row["E-Mail"]
 
     # Skip if already sent
     if row[SENT_COLUMN_NAME] == "Yes":
-        logging.info(f"E-mail already sent to {to_email}. Skipping.")
+        logging.info(f"E-Mail already sent to {to_email}. Skipping.")
         return
 
     try:
@@ -177,7 +177,7 @@ def send_personalized_email(df, row_index, subject_template, html_body_template,
             server.starttls()
             server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
             server.send_message(msg)
-            logging.info(f"E-mail successfully sent to {to_email}")
+            logging.info(f"E-Mail successfully sent to {to_email}")
 
             # Mark as sent and save
             update_sent_status(df, to_email)
@@ -194,7 +194,7 @@ if df is not None:
     # Get attachments
     attachments = get_all_attachments()
     
-    # E-mail templates with placeholders
+    # E-Mail templates with placeholders
     subject_template = "RigiBeats 2025 Feedback"
     
     html_body_template = """

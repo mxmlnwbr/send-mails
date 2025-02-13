@@ -207,9 +207,10 @@ if df is not None:
     Ihr seid die beste Community, und für das sagen wir: <strong>Danke!</strong> 🥳</p>
 
     <p>Euer Feedback ist uns wichtig  – egal, ob ihr dabei wart oder nicht!<br>
-    Nehmt euch kurz Zeit für unsere Umfrage (dauert maximal 5 Minuten):</p>
+    Nehmt euch kurz Zeit für unsere Umfrage (dauert maximal 5 Minuten):<br>
+    <a href="https://docs.google.com/forms/d/e/1FAIpQLSdONIpMxHbSyKgNwAxrHwMj0Y4-yRbpgKjYPi9vIuta2r0XwQ/viewform?usp=dialog">Rigibeats 2025 Feedback</a></p>
 
-    <p><a href="https://docs.google.com/forms/d/e/1FAIpQLSdONIpMxHbSyKgNwAxrHwMj0Y4-yRbpgKjYPi9vIuta2r0XwQ/viewform?usp=dialog">Rigibeats 2025 Feedback</a></p>
+    <p>Danke und bis zum nächsten Jahr! 🚀</p>
 
     <p>Liebe Grüsse<br>
     Max vom Rigibeats Team 👑🏔️❤️‍🔥</p>

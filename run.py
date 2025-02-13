@@ -196,26 +196,24 @@ if df is not None:
     attachments = get_all_attachments()
     
     # Email templates with placeholders
-    subject_template = "RigiBeats 2025 - Helferinfo für {Name}"  # Assuming 'Name' column exists
+    subject_template = "RigiBeats 2025 Feedback"  # Assuming 'Name' column exists
     
     markdown_body_template = """
     Hey {Name}! 👋
 
-    Erstmal danke für deine Unterstützung bei unserem Event. 🎉
-    Ohne euch wäre das RigiBeats 2025 schlichtweg nicht möglich.
+    **Rigibeats 2025 ist Geschichte! 🎉**  
 
-    Anbei schicke ich dir den Zugangscode für den Bezug deines gratis Rigibeats 2025 Tickets.
+    Leider hat uns der Föhn dieses Jahr einen Strich durch die Rechnung gemacht, doch das haltet uns nicht auf! 
+    Ein riesiges Dankeschön an alle, die am Sonntag dabei waren – die Stimmung war einfach fantastisch! 
+    Ihr seid die beste Community, und für das sagen wir: **Danke!** 🥳  
 
-    Zugangscode:
-    
-    - {Code} 
+    Euer Feedback ist uns wichtig!  
+    Nehmt euch kurz Zeit für unsere Umfrage (dauert maximal 5 Minuten):
 
-    Einfach auf www.eventfrog.ch/rigibeats eingeben und unter den freigeschalteten Kategorien auswählen.
+    [Rigibeats 2025 Feedback](https://docs.google.com/forms/d/e/1FAIpQLSdONIpMxHbSyKgNwAxrHwMj0Y4-yRbpgKjYPi9vIuta2r0XwQ/viewform?usp=dialog)
 
-    Bei Fragen, einfach fragen! 🤗
-
-    Liebe Grüsse & bis Samstag!
-    Max vom Rigibeats Team 👑🏔️❤️
+    Liebe Grüsse
+    Max vom Rigibeats Team 👑🏔️❤️‍🔥
     """
 
     # Process each row

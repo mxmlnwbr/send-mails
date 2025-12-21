@@ -37,8 +37,8 @@ def connect_to_sheet():
         return None
 
 
-def export_access_keys(sheet, output_file="access_keys.txt"):
-    """Export all access keys to a comma-separated text file."""
+def export_access_keys(sheet):
+    """Export all access keys in multiple formats."""
     try:
         # Get header row
         headers = sheet.row_values(1)
@@ -63,17 +63,33 @@ def export_access_keys(sheet, output_file="access_keys.txt"):
             logging.warning("No access keys found in the sheet")
             return
         
-        # Create comma-separated string
-        keys_string = ", ".join(valid_keys)
+        # Export in multiple formats
         
-        # Write to file
-        with open(output_file, 'w', encoding='utf-8') as f:
-            f.write(keys_string)
+        # Format 1: Comma-separated with space
+        with open("access_keys_comma_space.txt", 'w', encoding='utf-8') as f:
+            f.write(", ".join(valid_keys))
+        
+        # Format 2: Comma-separated without space
+        with open("access_keys_comma.txt", 'w', encoding='utf-8') as f:
+            f.write(",".join(valid_keys))
+        
+        # Format 3: One per line
+        with open("access_keys_lines.txt", 'w', encoding='utf-8') as f:
+            f.write("\n".join(valid_keys))
+        
+        # Format 4: CSV format (for Excel)
+        with open("access_keys.csv", 'w', encoding='utf-8') as f:
+            f.write("Access Key\n")
+            f.write("\n".join(valid_keys))
         
         logging.info(f"\n{'='*60}")
         logging.info(f"✅ Export Complete!")
         logging.info(f"Total keys exported: {len(valid_keys)}")
-        logging.info(f"Output file: {output_file}")
+        logging.info(f"\nFiles created:")
+        logging.info(f"  1. access_keys_comma_space.txt (comma + space)")
+        logging.info(f"  2. access_keys_comma.txt (comma only)")
+        logging.info(f"  3. access_keys_lines.txt (one per line)")
+        logging.info(f"  4. access_keys.csv (CSV format)")
         logging.info(f"{'='*60}")
         
         # Show preview of first few keys

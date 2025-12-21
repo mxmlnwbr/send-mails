@@ -11,6 +11,7 @@ from google.oauth2.service_account import Credentials as ServiceAccountCredentia
 import secrets
 import string
 import argparse
+import sys
 
 load_dotenv()
 
@@ -37,11 +38,11 @@ STATUS_OPEN = "1. Offen"
 STATUS_SENT = "2. Verschickt"
 
 
-def generate_access_key(length=16):
+def generate_access_key(length=12):
     """Generate a unique access key."""
     characters = string.ascii_uppercase + string.digits
     key = ''.join(secrets.choice(characters) for _ in range(length))
-    return f"RIGIBEATS-{key[:4]}-{key[4:8]}-{key[8:12]}-{key[12:16]}"
+    return f"RB26-{key[:4]}-{key[4:8]}-{key[8:12]}"
 
 
 def connect_to_sheet():
@@ -117,6 +118,66 @@ def send_email(to_email, access_key, test_mode=False):
     except Exception as e:
         logging.error(f"Failed to send email to {to_email}: {e}")
         return False
+
+
+def export_keys_to_files(sheet):
+    """Export all access keys to multiple file formats."""
+    try:
+        logging.info(f"\n{'='*60}")
+        logging.info("📤 Exporting keys to files...")
+        logging.info(f"{'='*60}\n")
+        
+        # Get header row
+        headers = sheet.row_values(1)
+        
+        # Find Access Key column
+        access_key_indices = [i for i, h in enumerate(headers) if h == ACCESS_KEY_COLUMN]
+        
+        if not access_key_indices:
+            logging.error(f"'{ACCESS_KEY_COLUMN}' column not found in the sheet")
+            return
+        
+        key_col_idx = access_key_indices[0] + 1
+        
+        # Get all values from the Access Key column (skip header)
+        all_keys = sheet.col_values(key_col_idx)[1:]  # Skip header row
+        
+        # Filter out empty values and strip whitespace
+        valid_keys = [key.strip() for key in all_keys if key and key.strip()]
+        
+        if not valid_keys:
+            logging.warning("No access keys found in the sheet")
+            return
+        
+        # Export in multiple formats
+        
+        # Format 1: Comma-separated with space
+        with open("access_keys_comma_space.txt", 'w', encoding='utf-8') as f:
+            f.write(", ".join(valid_keys))
+        
+        # Format 2: Comma-separated without space
+        with open("access_keys_comma.txt", 'w', encoding='utf-8') as f:
+            f.write(",".join(valid_keys))
+        
+        # Format 3: One per line
+        with open("access_keys_lines.txt", 'w', encoding='utf-8') as f:
+            f.write("\n".join(valid_keys))
+        
+        # Format 4: CSV format (for Excel)
+        with open("access_keys.csv", 'w', encoding='utf-8') as f:
+            f.write("Access Key\n")
+            f.write("\n".join(valid_keys))
+        
+        logging.info(f"✅ Export Complete!")
+        logging.info(f"Total keys exported: {len(valid_keys)}")
+        logging.info(f"\nFiles created:")
+        logging.info(f"  1. access_keys_comma_space.txt (comma + space)")
+        logging.info(f"  2. access_keys_comma.txt (comma only)")
+        logging.info(f"  3. access_keys_lines.txt (one per line)")
+        logging.info(f"  4. access_keys.csv (CSV format)")
+        
+    except Exception as e:
+        logging.error(f"Error exporting access keys: {e}")
 
 
 def generate_keys_only(sheet):
@@ -217,8 +278,13 @@ def generate_keys_only(sheet):
         logging.info(f"Keys generated: {generated_count}")
         logging.info(f"Skipped (already has key): {skipped_count}")
         logging.info(f"{'='*60}")
+        
+        # Automatically export keys after generation
+        if generated_count > 0 or skipped_count > 0:
+            export_keys_to_files(sheet)
+        
         logging.info("\n⚠️  NEXT STEPS:")
-        logging.info("1. Upload the generated keys to your website")
+        logging.info("1. Upload the generated keys to your website (files exported above)")
         logging.info("2. Run 'uv run python run.py' to send emails with the keys")
 
     except Exception as e:

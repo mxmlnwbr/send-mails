@@ -55,13 +55,33 @@
 
 ## Usage
 
-Run the script:
+### Test Mode (Recommended First)
+
+Before sending real emails, test the setup:
+
+```bash
+uv run python run.py --test
+# or
+uv run python run.py --dry-run
+```
+
+Test mode will:
+- ✅ Connect to Google Sheets
+- ✅ Read and validate data
+- ✅ Show which emails would be sent
+- ✅ Display email content previews
+- ❌ NOT send actual emails
+- ❌ NOT update sheet status
+
+### Production Mode
+
+When ready to send real emails:
 
 ```bash
 uv run python run.py
 ```
 
-The script will:
+Production mode will:
 1. Connect to your Google Sheet
 2. Find all rows with Status = "1. Offen"
 3. Validate email addresses

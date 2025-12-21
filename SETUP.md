@@ -92,11 +92,38 @@ If you're using Gmail, you need to create an App Password:
 4. Generate a new app password for "Mail"
 5. Use this password in your `.env` file
 
-## Step 8: Run the Script
+## Step 8: Test Your Setup
+
+First, run in test mode to verify everything works without sending emails:
+
+```bash
+uv run python run.py --test
+```
+
+This will show you:
+- Which emails would be sent
+- What access keys would be generated
+- Preview of email content
+- Any validation errors
+
+If everything looks good, run in production mode:
 
 ```bash
 uv run python run.py
 ```
+
+## Testing
+
+Always test first with the `--test` flag:
+
+```bash
+uv run python run.py --test
+```
+
+This simulates the entire process without:
+- Sending actual emails
+- Updating sheet status
+- Writing access keys to the sheet (if new)
 
 ## Troubleshooting
 

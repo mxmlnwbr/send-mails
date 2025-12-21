@@ -10,6 +10,7 @@ from google.auth.credentials import Credentials
 from google.oauth2.service_account import Credentials as ServiceAccountCredentials
 import secrets
 import string
+import argparse
 
 load_dotenv()
 
@@ -69,7 +70,7 @@ def is_valid_email(email):
     return "@" in email and "." in email and len(email) > 5
 
 
-def send_email(to_email, access_key):
+def send_email(to_email, access_key, test_mode=False):
     """Send email with access key to recipient."""
     try:
         subject = "RigiBeats 2024 - Helfer:innen Tickets"
@@ -84,6 +85,13 @@ def send_email(to_email, access_key):
             </body>
         </html>
         """
+
+        if test_mode:
+            logging.info(f"[TEST MODE] Would send email to: {to_email}")
+            logging.info(f"[TEST MODE] Subject: {subject}")
+            logging.info(f"[TEST MODE] Access Key: {access_key}")
+            logging.info(f"[TEST MODE] Body preview: {body[:200]}...")
+            return True
 
         msg = MIMEMultipart('alternative')
         msg["From"] = EMAIL_ADDRESS
@@ -102,9 +110,15 @@ def send_email(to_email, access_key):
         return False
 
 
-def process_entries(sheet):
+def process_entries(sheet, test_mode=False):
     """Process all entries with status '1. Offen' and send access keys."""
     try:
+        if test_mode:
+            logging.info("\n" + "="*60)
+            logging.info("🧪 TEST MODE ENABLED - No emails will be sent!")
+            logging.info("🧪 Sheet status will NOT be updated!")
+            logging.info("="*60 + "\n")
+        
         # Get all records as dictionaries
         all_records = sheet.get_all_records()
         
@@ -157,24 +171,32 @@ def process_entries(sheet):
             else:
                 # Generate new access key
                 access_key = generate_access_key()
-                sheet.update_cell(idx, key_col_idx, access_key)
-                logging.info(f"Row {idx}: Generated new access key for {email}")
+                if not test_mode:
+                    sheet.update_cell(idx, key_col_idx, access_key)
+                logging.info(f"Row {idx}: {'[TEST] Would generate' if test_mode else 'Generated'} new access key for {email}")
 
             # Send email
-            if send_email(email, access_key):
-                # Update status to "2. Verschickt"
-                sheet.update_cell(idx, status_col_idx, STATUS_SENT)
-                logging.info(f"Row {idx}: Updated status to '{STATUS_SENT}' for {email}")
+            if send_email(email, access_key, test_mode):
+                if not test_mode:
+                    # Update status to "2. Verschickt"
+                    sheet.update_cell(idx, status_col_idx, STATUS_SENT)
+                    logging.info(f"Row {idx}: Updated status to '{STATUS_SENT}' for {email}")
+                else:
+                    logging.info(f"Row {idx}: [TEST] Would update status to '{STATUS_SENT}' for {email}")
                 processed_count += 1
             else:
                 logging.error(f"Row {idx}: Failed to send email to {email}, status not updated")
                 skipped_count += 1
 
-        logging.info(f"\n{'='*50}")
-        logging.info(f"Processing complete!")
-        logging.info(f"Emails sent: {processed_count}")
+        logging.info(f"\n{'='*60}")
+        if test_mode:
+            logging.info(f"🧪 TEST MODE - Simulation Complete!")
+            logging.info(f"Would have sent {processed_count} emails")
+        else:
+            logging.info(f"Processing complete!")
+            logging.info(f"Emails sent: {processed_count}")
         logging.info(f"Skipped: {skipped_count}")
-        logging.info(f"{'='*50}")
+        logging.info(f"{'='*60}")
 
     except Exception as e:
         logging.error(f"Error processing entries: {e}")
@@ -182,10 +204,41 @@ def process_entries(sheet):
 
 def main():
     """Main function to run the script."""
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(
+        description='Send access key emails from Google Sheets',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # Production mode (actually sends emails):
+  uv run python run.py
+  
+  # Test mode (simulate without sending):
+  uv run python run.py --test
+  uv run python run.py --dry-run
+        """
+    )
+    parser.add_argument(
+        '--test', '--dry-run',
+        action='store_true',
+        dest='test_mode',
+        help='Test mode: simulate sending without actually sending emails or updating sheet status'
+    )
+    args = parser.parse_args()
+    
+    if args.test_mode:
+        logging.info("🧪 Running in TEST MODE - No emails will be sent, no statuses will be updated")
+    else:
+        logging.info("🚀 Running in PRODUCTION MODE - Emails will be sent and statuses updated")
+    
     logging.info("Starting email distribution script...")
     
     # Validate environment variables
-    if not all([SMTP_SERVER, EMAIL_ADDRESS, EMAIL_PASSWORD, SPREADSHEET_ID]):
+    required_vars = [SPREADSHEET_ID]
+    if not args.test_mode:
+        required_vars.extend([SMTP_SERVER, EMAIL_ADDRESS, EMAIL_PASSWORD])
+    
+    if not all(required_vars):
         logging.error("Missing required environment variables. Check your .env file.")
         return
 
@@ -202,7 +255,7 @@ def main():
         return
 
     # Process entries
-    process_entries(sheet)
+    process_entries(sheet, test_mode=args.test_mode)
     
     logging.info("Script finished.")
 

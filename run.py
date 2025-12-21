@@ -34,6 +34,10 @@ EMAIL_COLUMN = "Email"
 STATUS_COLUMN = "Status"
 ACCESS_KEY_COLUMN = "Access Key"
 SELBSTKAUF_COLUMN = "Selbstkauf"
+NAME_COLUMN = "Name"
+GRUND_COLUMN = "Grund"
+NUM_TICKETS_COLUMN = "# Tickets"
+TICKET_CATEGORY_COLUMN = "Ticketkat."
 STATUS_OPEN = "1. Offen"
 STATUS_SENT = "2. Verschickt"
 
@@ -80,18 +84,31 @@ def is_valid_email(email):
     return "@" in email_str and "." in email_str and len(email_str) > 5
 
 
-def send_email(to_email, access_key, test_mode=False):
+def send_email(to_email, access_key, name="", grund="", num_tickets="", ticket_category="", test_mode=False):
     """Send email with access key to recipient."""
     try:
-        subject = "RigiBeats 2024 - Helfer:innen Tickets"
+        # Prepare personalized greeting
+        greeting = f"Hey {name}!" if name else "Hey!"
+        
+        # Prepare ticket information
+        ticket_info = ""
+        if num_tickets:
+            ticket_info += f"<p><strong>Anzahl Tickets:</strong> {num_tickets}</p>"
+        if ticket_category:
+            ticket_info += f"<p><strong>Ticket-Kategorien:</strong> {ticket_category}</p>"
+        if grund:
+            ticket_info += f"<p><strong>Grund:</strong> {grund}</p>"
+        
+        subject = "Rigibeats 2026 - Dein Ticket"
         body = f"""
         <html>
             <body>
-                <p>Hey 👋!</p>
-                <p>Erstmal herzlichen Dank, dass du uns RigiBeats 2024 als Helfer:in unterstützt 🎉. Ohne deine Hilfe könnten wir den Event nicht durchführen. Nun schicken wir dir dein gratis Helfer:innen Ticket.</p>
-                <p>Dein persönlicher Zugangsschlüssel für 1 Ticket lautet: <strong>{access_key}</strong></p>
-                <p>Bitte einfach hier einlösen: https://eventfrog.ch/de/p/party/house-techno/rigibeats-2024-7121106425825163433.html</p>
-                <p>Dein RigiBeats Team ❤️</p>
+                <p>{greeting}</p>
+                <p>Hier ist dein Zugangsschlüssel für Rigibeats 2026 🎉</p>
+                {ticket_info}
+                <p>Dein Code: <strong>{access_key}</strong></p>
+                <p>Jetzt einlösen: <a href="https://eventfrog.ch/de/p/party/house-techno/rigibeats-2024-7121106425825163433.html">https://eventfrog.ch/de/p/party/house-techno/rigibeats-2024-7121106425825163433.html</a></p>
+                <p>See you on the dancefloor ❤️<br>Rigibeats Team</p>
             </body>
         </html>
         """
@@ -100,6 +117,7 @@ def send_email(to_email, access_key, test_mode=False):
             logging.info(f"[TEST MODE] Would send email to: {to_email}")
             logging.info(f"[TEST MODE] Subject: {subject}")
             logging.info(f"[TEST MODE] Access Key: {access_key}")
+            logging.info(f"[TEST MODE] Name: {name}, Grund: {grund}, Tickets: {num_tickets}, Category: {ticket_category}")
             logging.info(f"[TEST MODE] Body preview: {body[:200]}...")
             return True
 
@@ -334,6 +352,12 @@ def process_entries(sheet, test_mode=False):
             email_raw = record.get(EMAIL_COLUMN, "")
             email = str(email_raw).strip() if email_raw else ""
             selbstkauf = str(record.get(SELBSTKAUF_COLUMN, "")).strip()
+            
+            # Get additional personalization fields
+            name = str(record.get(NAME_COLUMN, "")).strip()
+            grund = str(record.get(GRUND_COLUMN, "")).strip()
+            num_tickets = str(record.get(NUM_TICKETS_COLUMN, "")).strip()
+            ticket_category = str(record.get(TICKET_CATEGORY_COLUMN, "")).strip()
 
             # Only process entries with status "1. Offen"
             if status != STATUS_OPEN:
@@ -365,8 +389,8 @@ def process_entries(sheet, test_mode=False):
             
             logging.info(f"Row {idx}: Using access key {access_key} for {email}")
 
-            # Send email
-            if send_email(email, access_key, test_mode):
+            # Send email with personalized information
+            if send_email(email, access_key, name, grund, num_tickets, ticket_category, test_mode):
                 if not test_mode:
                     # Update status to "2. Verschickt"
                     sheet.update_cell(idx, status_col_idx, STATUS_SENT)

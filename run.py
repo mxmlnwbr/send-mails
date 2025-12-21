@@ -1,225 +1,211 @@
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from email.mime.base import MIMEBase
-from email import encoders
 import os
 from dotenv import load_dotenv
 from tqdm import tqdm
 import logging
-import pandas as pd
+import gspread
+from google.auth.credentials import Credentials
+from google.oauth2.service_account import Credentials as ServiceAccountCredentials
+import secrets
+import string
 
-# Load environment variables
 load_dotenv()
 
-# Configure logging
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
 # SMTP Configuration
 SMTP_SERVER = os.getenv("SMTP_SERVER")
-SMTP_PORT = 587  # Using 587 for TLS
+SMTP_PORT = 587
 EMAIL_ADDRESS = os.getenv("SMTP_ACCOUNT")
 EMAIL_PASSWORD = os.getenv("SMTP_PASSWORD")
 
-ATTACHMENTS_FOLDER = "attachments"  # Define the attachment folder
-DATA_FOLDER = "data"  # Define the data folder
-SENT_COLUMN_NAME = "Sent"  # The column in the Excel file that tracks sent emails
+# Google Sheets Configuration
+SPREADSHEET_ID = os.getenv("SPREADSHEET_ID")
+CREDENTIALS_FILE = os.getenv("GOOGLE_CREDENTIALS_FILE", "credentials.json")
+
+# Column names in the sheet
+EMAIL_COLUMN = "Email"
+STATUS_COLUMN = "Status"
+ACCESS_KEY_COLUMN = "Access Key"
+STATUS_OPEN = "1. Offen"
+STATUS_SENT = "2. Verschickt"
 
 
-def read_email_addresses(excel_filename):
-    """
-    Reads email addresses from an Excel file and adds a 'Sent' column if it doesn't exist.
+def generate_access_key(length=16):
+    """Generate a unique access key."""
+    characters = string.ascii_uppercase + string.digits
+    key = ''.join(secrets.choice(characters) for _ in range(length))
+    return f"RIGIBEATS-{key[:4]}-{key[4:8]}-{key[8:12]}-{key[12:16]}"
 
-    Args:
-        excel_filename (str): The name of the Excel file (located in the 'data' folder).
 
-    Returns:
-        tuple: A tuple containing the dataframe and a list of email addresses that have not been sent.
-    """
+def connect_to_sheet():
+    """Connect to Google Sheets using service account credentials."""
     try:
-        file_path = os.path.join(DATA_FOLDER, excel_filename)
-        # Read the Excel file using pandas
-        df = pd.read_excel(file_path)
-
-        # Check if the 'Sent' column exists; if not, create it and set all values to 'No'
-        if SENT_COLUMN_NAME not in df.columns:
-            df[SENT_COLUMN_NAME] = "No"
-            logging.info(f"Added '{SENT_COLUMN_NAME}' column to the Excel file.")
-
-        # Filter the email addresses that are not sent yet (i.e., 'Sent' == 'No')
-        email_addresses = df[df[SENT_COLUMN_NAME] != "Yes"]["E-Mail"].dropna().tolist()
-        logging.info(
-            f"Successfully read {len(email_addresses)} email addresses that need to be sent."
-        )
-        return df, email_addresses
-
-    except Exception as e:
-        logging.error(f"Error reading email addresses from {excel_filename}: {e}")
-        return None, []
-
-
-def get_all_attachments():
-    """
-    Retrieves all filenames in the ATTACHMENTS_FOLDER, excluding hidden files (those starting with a dot).
-
-    Returns:
-        list: A list of filenames in the ATTACHMENTS_FOLDER.
-    """
-    try:
-        return [
-            f
-            for f in os.listdir(ATTACHMENTS_FOLDER)
-            if os.path.isfile(os.path.join(ATTACHMENTS_FOLDER, f))
-            and not f.startswith(".")
+        scopes = [
+            'https://www.googleapis.com/auth/spreadsheets',
+            'https://www.googleapis.com/auth/drive'
         ]
+        credentials = ServiceAccountCredentials.from_service_account_file(
+            CREDENTIALS_FILE, scopes=scopes
+        )
+        client = gspread.authorize(credentials)
+        sheet = client.open_by_key(SPREADSHEET_ID).sheet1
+        logging.info("Successfully connected to Google Sheets")
+        return sheet
     except Exception as e:
-        logging.error(f"Error retrieving attachments: {e}")
-        return []
+        logging.error(f"Error connecting to Google Sheets: {e}")
+        return None
 
 
-def update_sent_status(df, email):
-    """
-    Updates the 'Sent' status for an email in the dataframe to 'Yes'.
-
-    Args:
-        df (DataFrame): The dataframe containing email addresses.
-        email (str): The email address to mark as sent.
-    """
-    df.loc[df["E-Mail"] == email, SENT_COLUMN_NAME] = "Yes"
-    logging.info(f"Marked {email} as sent.")
+def is_valid_email(email):
+    """Basic email validation."""
+    if not email or not isinstance(email, str):
+        return False
+    email = email.strip()
+    return "@" in email and "." in email and len(email) > 5
 
 
-def save_updated_excel(df, excel_filename):
-    """
-    Saves the updated dataframe back to the Excel file.
-
-    Args:
-        df (DataFrame): The updated dataframe with the 'Sent' status.
-        excel_filename (str): The name of the Excel file to save to.
-    """
+def send_email(to_email, access_key):
+    """Send email with access key to recipient."""
     try:
-        file_path = os.path.join(DATA_FOLDER, excel_filename)
-        df.to_excel(file_path, index=False)
-        logging.info(f"Updated Excel file saved to {file_path}.")
-    except Exception as e:
-        logging.error(f"Error saving updated Excel file: {e}")
+        subject = "RigiBeats 2024 - Helfer:innen Tickets"
+        body = f"""
+        <html>
+            <body>
+                <p>Hey 👋!</p>
+                <p>Erstmal herzlichen Dank, dass du uns RigiBeats 2024 als Helfer:in unterstützt 🎉. Ohne deine Hilfe könnten wir den Event nicht durchführen. Nun schicken wir dir dein gratis Helfer:innen Ticket.</p>
+                <p>Dein persönlicher Zugangsschlüssel für 1 Ticket lautet: <strong>{access_key}</strong></p>
+                <p>Bitte einfach hier einlösen: https://eventfrog.ch/de/p/party/house-techno/rigibeats-2024-7121106425825163433.html</p>
+                <p>Dein RigiBeats Team ❤️</p>
+            </body>
+        </html>
+        """
 
-
-def add_attachments(msg, attachments):
-    """
-    Add attachments to the email.
-
-    Args:
-        msg (MIMEMultipart): The email message object.
-        attachments (list): A list of filenames to attach (located in ATTACHMENTS_FOLDER).
-    """
-    for filename in attachments:
-        file_path = os.path.join(ATTACHMENTS_FOLDER, filename)
-        try:
-            with open(file_path, "rb") as attachment:
-                part = MIMEBase("application", "octet-stream")
-                part.set_payload(attachment.read())
-            encoders.encode_base64(part)
-            part.add_header("Content-Disposition", f"attachment; filename={filename}")
-            msg.attach(part)
-            logging.info(f"Attached file: {filename}")
-        except FileNotFoundError:
-            logging.warning(f"Attachment file not found: {filename}")
-        except Exception as e:
-            logging.error(f"Error attaching file {filename}: {e}")
-
-
-def send_personalized_email(df, row_index, subject_template, html_body_template, attachments=None):
-    """
-    Sends a personalized email to a single recipient based on their row data.
-
-    Args:
-        df (DataFrame): The dataframe containing email addresses and their data
-        row_index (int): The index of the row to process
-        subject_template (str): The template for the email subject with placeholders
-        html_body_template (str): The template for the email body with placeholders
-        attachments (list): A list of filenames to attach (default: None)
-    """
-    row = df.iloc[row_index]
-    to_email = row["E-Mail"]
-
-    # Skip if already sent
-    if row[SENT_COLUMN_NAME] == "Yes":
-        logging.info(f"E-Mail already sent to {to_email}. Skipping.")
-        return
-
-    try:
-        # Create a copy of the row data and modify the Vorname to first name only
-        row_data = row.to_dict()
-        row_data["Vorname"] = row_data["Vorname"].split()[0]  # Get first name only
-
-        # Replace placeholders in subject and body with row data
-        subject = subject_template.format(**row_data)
-        personalized_body = html_body_template.format(**row_data)
-
-        # Create the email message
         msg = MIMEMultipart('alternative')
         msg["From"] = EMAIL_ADDRESS
         msg["To"] = to_email
         msg["Subject"] = subject
-        msg["Bcc"] = "hi@rigibeats.ch"  # Add BCC
+        msg.attach(MIMEText(body, 'html', 'utf-8'))
 
-        # Add HTML content
-        msg.attach(MIMEText(personalized_body, 'html', 'utf-8'))
-
-        if attachments:
-            add_attachments(msg, attachments)
-
-        # Create and send the email
         with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
             server.starttls()
             server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
             server.send_message(msg)
-            logging.info(f"E-Mail successfully sent to {to_email}")
-
-            # Mark as sent and save
-            update_sent_status(df, to_email)
-            save_updated_excel(df, "email_list.xlsx")
-
+            logging.info(f"Email successfully sent to {to_email}")
+            return True
     except Exception as e:
         logging.error(f"Failed to send email to {to_email}: {e}")
+        return False
 
 
-# Read email addresses from the Excel file
-df, _ = read_email_addresses("email_list.xlsx")
-
-if df is not None:
-    # Get attachments
-    attachments = get_all_attachments()
-    
-    # E-Mail templates with placeholders
-    subject_template = "RigiBeats 2025 Feedback"
-    
-    html_body_template = """
-    <p>Hey {Vorname}! 👋</p>
-
-    <p><strong>Rigibeats 2025 ist Geschichte! 🎉</strong></p>
-
-    <p>Leider hat uns der Föhn dieses Jahr einen Strich durch die Rechnung gemacht, doch das haltet uns nicht auf!<br>
-    Ein riesiges Dankeschön an alle, die am Sonntag dabei waren – die Stimmung war einfach fantastisch!<br>
-    Ihr seid die beste Community, und für das sagen wir: <strong>Danke!</strong> 🥳</p>
-
-    <p>Euer Feedback ist uns wichtig  – egal, ob ihr dabei wart oder nicht!<br>
-    Nehmt euch kurz Zeit für unsere Umfrage (dauert maximal 5 Minuten):<br>
-    <a href="https://docs.google.com/forms/d/e/1FAIpQLSdONIpMxHbSyKgNwAxrHwMj0Y4-yRbpgKjYPi9vIuta2r0XwQ/viewform?usp=dialog">Rigibeats 2025 Feedback</a></p>
-
-    <p>Danke und bis zum nächsten Jahr! 🚀</p>
-
-    <p>Liebe Grüsse<br>
-    Max vom Rigibeats Team 👑🏔️❤️‍🔥</p>
-    """
-
-    # Process each row
-    for index in tqdm(range(len(df)), desc="Processing entries", unit="email"):
-        send_personalized_email(df, index, subject_template, html_body_template, attachments)
+def process_entries(sheet):
+    """Process all entries with status '1. Offen' and send access keys."""
+    try:
+        # Get all records as dictionaries
+        all_records = sheet.get_all_records()
         
-    print("All emails have been processed!")
-else:
-    print("Failed to read the Excel file. Please check the file path and format.")
+        if not all_records:
+            logging.warning("No records found in the sheet")
+            return
+
+        # Get header row to find column indices
+        headers = sheet.row_values(1)
+        
+        # Find column indices
+        try:
+            email_col_idx = headers.index(EMAIL_COLUMN) + 1
+            status_col_idx = headers.index(STATUS_COLUMN) + 1
+            
+            # Check if Access Key column exists, if not create it
+            if ACCESS_KEY_COLUMN in headers:
+                key_col_idx = headers.index(ACCESS_KEY_COLUMN) + 1
+            else:
+                key_col_idx = len(headers) + 1
+                sheet.update_cell(1, key_col_idx, ACCESS_KEY_COLUMN)
+                logging.info(f"Created '{ACCESS_KEY_COLUMN}' column")
+        except ValueError as e:
+            logging.error(f"Required column not found: {e}")
+            return
+
+        processed_count = 0
+        skipped_count = 0
+
+        # Process each row (starting from row 2, since row 1 is headers)
+        for idx, record in enumerate(tqdm(all_records, desc="Processing entries"), start=2):
+            status = record.get(STATUS_COLUMN, "").strip()
+            email = record.get(EMAIL_COLUMN, "").strip()
+
+            # Only process entries with status "1. Offen"
+            if status != STATUS_OPEN:
+                continue
+
+            # Skip if no valid email
+            if not is_valid_email(email):
+                logging.warning(f"Row {idx}: Invalid or missing email, skipping")
+                skipped_count += 1
+                continue
+
+            # Check if access key already exists
+            existing_key = record.get(ACCESS_KEY_COLUMN, "").strip()
+            if existing_key:
+                access_key = existing_key
+                logging.info(f"Row {idx}: Using existing access key for {email}")
+            else:
+                # Generate new access key
+                access_key = generate_access_key()
+                sheet.update_cell(idx, key_col_idx, access_key)
+                logging.info(f"Row {idx}: Generated new access key for {email}")
+
+            # Send email
+            if send_email(email, access_key):
+                # Update status to "2. Verschickt"
+                sheet.update_cell(idx, status_col_idx, STATUS_SENT)
+                logging.info(f"Row {idx}: Updated status to '{STATUS_SENT}' for {email}")
+                processed_count += 1
+            else:
+                logging.error(f"Row {idx}: Failed to send email to {email}, status not updated")
+                skipped_count += 1
+
+        logging.info(f"\n{'='*50}")
+        logging.info(f"Processing complete!")
+        logging.info(f"Emails sent: {processed_count}")
+        logging.info(f"Skipped: {skipped_count}")
+        logging.info(f"{'='*50}")
+
+    except Exception as e:
+        logging.error(f"Error processing entries: {e}")
+
+
+def main():
+    """Main function to run the script."""
+    logging.info("Starting email distribution script...")
+    
+    # Validate environment variables
+    if not all([SMTP_SERVER, EMAIL_ADDRESS, EMAIL_PASSWORD, SPREADSHEET_ID]):
+        logging.error("Missing required environment variables. Check your .env file.")
+        return
+
+    # Check if credentials file exists
+    if not os.path.exists(CREDENTIALS_FILE):
+        logging.error(f"Credentials file not found: {CREDENTIALS_FILE}")
+        logging.error("Please follow the setup guide to create service account credentials.")
+        return
+
+    # Connect to Google Sheets
+    sheet = connect_to_sheet()
+    if not sheet:
+        logging.error("Failed to connect to Google Sheets. Exiting.")
+        return
+
+    # Process entries
+    process_entries(sheet)
+    
+    logging.info("Script finished.")
+
+
+if __name__ == "__main__":
+    main()

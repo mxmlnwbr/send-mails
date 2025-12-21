@@ -118,6 +118,97 @@ def send_email(to_email, access_key, test_mode=False):
         return False
 
 
+def generate_keys_only(sheet):
+    """Generate access keys for all entries without sending emails."""
+    try:
+        logging.info("\n" + "="*60)
+        logging.info("🔑 KEY GENERATION MODE - Only generating keys, no emails sent!")
+        logging.info("="*60 + "\n")
+        
+        # Get header row first to handle empty columns
+        headers = sheet.row_values(1)
+        
+        # Get all data rows
+        all_data = sheet.get_all_values()[1:]  # Skip header row
+        
+        # Create records manually, handling empty headers
+        all_records = []
+        for row_data in all_data:
+            record = {}
+            for idx, header in enumerate(headers):
+                if header:  # Only process non-empty headers
+                    record[header] = row_data[idx] if idx < len(row_data) else ""
+            all_records.append(record)
+        
+        if not all_records:
+            logging.warning("No records found in the sheet")
+            return
+        
+        # Find column indices
+        try:
+            status_col_idx = headers.index(STATUS_COLUMN) + 1
+            
+            # Check if Access Key column exists, if not create it
+            if ACCESS_KEY_COLUMN in headers:
+                key_col_idx = headers.index(ACCESS_KEY_COLUMN) + 1
+            else:
+                key_col_idx = len(headers) + 1
+                sheet.update_cell(1, key_col_idx, ACCESS_KEY_COLUMN)
+                logging.info(f"Created '{ACCESS_KEY_COLUMN}' column at position {key_col_idx}")
+        except ValueError as e:
+            logging.error(f"Required column not found: {e}")
+            return
+
+        generated_count = 0
+        skipped_count = 0
+
+        # Process each row (starting from row 2, since row 1 is headers)
+        for idx, record in enumerate(tqdm(all_records, desc="Generating keys"), start=2):
+            status = str(record.get(STATUS_COLUMN, "")).strip()
+            email_raw = record.get(EMAIL_COLUMN, "")
+            email = str(email_raw).strip() if email_raw else ""
+
+            # Only process entries with status "1. Offen"
+            if status != STATUS_OPEN:
+                continue
+
+            # Skip if no valid email
+            if not is_valid_email(email_raw):
+                email_check = str(email_raw).strip()
+                if email_check and email_check.replace('+', '').replace('-', '').replace(' ', '').replace('(', '').replace(')', '').isdigit():
+                    logging.warning(f"Row {idx}: Phone number detected ({email_check}), skipping")
+                else:
+                    logging.warning(f"Row {idx}: Invalid or missing email ({email_check}), skipping")
+                skipped_count += 1
+                continue
+
+            # Check if access key already exists
+            existing_key_raw = record.get(ACCESS_KEY_COLUMN, "")
+            existing_key = str(existing_key_raw).strip() if existing_key_raw else ""
+            
+            if existing_key:
+                logging.info(f"Row {idx}: Access key already exists for {email}")
+                skipped_count += 1
+            else:
+                # Generate new access key
+                access_key = generate_access_key()
+                sheet.update_cell(idx, key_col_idx, access_key)
+                logging.info(f"Row {idx}: Generated key {access_key} for {email}")
+                generated_count += 1
+
+        logging.info(f"\n{'='*60}")
+        logging.info(f"🔑 Key Generation Complete!")
+        logging.info(f"Keys generated: {generated_count}")
+        logging.info(f"Skipped (already has key or invalid): {skipped_count}")
+        logging.info(f"{'='*60}")
+        logging.info("\n⚠️  NEXT STEPS:")
+        logging.info("1. Upload the generated keys to your website")
+        logging.info("2. Run 'uv run python run.py' to send emails with the keys")
+
+    except Exception as e:
+        logging.error(f"Error generating keys: {e}")
+
+
 def process_entries(sheet, test_mode=False):
     """Process all entries with status '1. Offen' and send access keys."""
     try:
@@ -127,15 +218,24 @@ def process_entries(sheet, test_mode=False):
             logging.info("🧪 Sheet status will NOT be updated!")
             logging.info("="*60 + "\n")
         
-        # Get all records as dictionaries
-        all_records = sheet.get_all_records()
+        # Get header row first to handle empty columns
+        headers = sheet.row_values(1)
+        
+        # Get all data rows
+        all_data = sheet.get_all_values()[1:]  # Skip header row
+        
+        # Create records manually, handling empty headers
+        all_records = []
+        for row_data in all_data:
+            record = {}
+            for idx, header in enumerate(headers):
+                if header:  # Only process non-empty headers
+                    record[header] = row_data[idx] if idx < len(row_data) else ""
+            all_records.append(record)
         
         if not all_records:
             logging.warning("No records found in the sheet")
             return
-
-        # Get header row to find column indices
-        headers = sheet.row_values(1)
         
         # Find column indices
         try:
@@ -178,18 +278,16 @@ def process_entries(sheet, test_mode=False):
                 skipped_count += 1
                 continue
 
-            # Check if access key already exists
+            # Check if access key exists (required for sending)
             existing_key_raw = record.get(ACCESS_KEY_COLUMN, "")
-            existing_key = str(existing_key_raw).strip() if existing_key_raw else ""
-            if existing_key:
-                access_key = existing_key
-                logging.info(f"Row {idx}: Using existing access key for {email}")
-            else:
-                # Generate new access key
-                access_key = generate_access_key()
-                if not test_mode:
-                    sheet.update_cell(idx, key_col_idx, access_key)
-                logging.info(f"Row {idx}: {'[TEST] Would generate' if test_mode else 'Generated'} new access key for {email}")
+            access_key = str(existing_key_raw).strip() if existing_key_raw else ""
+            
+            if not access_key:
+                logging.warning(f"Row {idx}: No access key found for {email}, skipping. Run with --generate-keys first!")
+                skipped_count += 1
+                continue
+            
+            logging.info(f"Row {idx}: Using access key {access_key} for {email}")
 
             # Send email
             if send_email(email, access_key, test_mode):
@@ -226,13 +324,20 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  # Production mode (actually sends emails):
-  uv run python run.py
+  # Step 1: Generate keys only (no emails):
+  uv run python run.py --generate-keys
   
-  # Test mode (simulate without sending):
+  # Step 2: Test mode (simulate without sending):
   uv run python run.py --test
-  uv run python run.py --dry-run
+  
+  # Step 3: Production mode (sends emails):
+  uv run python run.py
         """
+    )
+    parser.add_argument(
+        '--generate-keys',
+        action='store_true',
+        help='Generate access keys only without sending emails (Step 1)'
     )
     parser.add_argument(
         '--test', '--dry-run',
@@ -242,7 +347,10 @@ Examples:
     )
     args = parser.parse_args()
     
-    if args.test_mode:
+    # Determine mode
+    if args.generate_keys:
+        logging.info("🔑 Running in KEY GENERATION MODE - Only generating keys")
+    elif args.test_mode:
         logging.info("🧪 Running in TEST MODE - No emails will be sent, no statuses will be updated")
     else:
         logging.info("🚀 Running in PRODUCTION MODE - Emails will be sent and statuses updated")
@@ -251,7 +359,7 @@ Examples:
     
     # Validate environment variables
     required_vars = [SPREADSHEET_ID]
-    if not args.test_mode:
+    if not args.test_mode and not args.generate_keys:
         required_vars.extend([SMTP_SERVER, EMAIL_ADDRESS, EMAIL_PASSWORD])
     
     if not all(required_vars):
@@ -270,8 +378,11 @@ Examples:
         logging.error("Failed to connect to Google Sheets. Exiting.")
         return
 
-    # Process entries
-    process_entries(sheet, test_mode=args.test_mode)
+    # Run appropriate mode
+    if args.generate_keys:
+        generate_keys_only(sheet)
+    else:
+        process_entries(sheet, test_mode=args.test_mode)
     
     logging.info("Script finished.")
 

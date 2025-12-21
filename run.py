@@ -150,8 +150,16 @@ def generate_keys_only(sheet):
             status_col_idx = headers.index(STATUS_COLUMN) + 1
             
             # Check if Access Key column exists, if not create it
-            if ACCESS_KEY_COLUMN in headers:
-                key_col_idx = headers.index(ACCESS_KEY_COLUMN) + 1
+            # Find all occurrences of "Access Key" column
+            access_key_indices = [i for i, h in enumerate(headers) if h == ACCESS_KEY_COLUMN]
+            
+            if len(access_key_indices) > 1:
+                logging.warning(f"Found {len(access_key_indices)} columns named '{ACCESS_KEY_COLUMN}' at positions {[i+1 for i in access_key_indices]}")
+                logging.warning(f"Using the first one at column {access_key_indices[0]+1}")
+                key_col_idx = access_key_indices[0] + 1
+            elif len(access_key_indices) == 1:
+                key_col_idx = access_key_indices[0] + 1
+                logging.info(f"Found '{ACCESS_KEY_COLUMN}' column at position {key_col_idx}")
             else:
                 key_col_idx = len(headers) + 1
                 sheet.update_cell(1, key_col_idx, ACCESS_KEY_COLUMN)
@@ -174,8 +182,8 @@ def generate_keys_only(sheet):
             if status != STATUS_OPEN:
                 continue
 
-            # Skip if Selbstkauf is not "Nein"
-            if selbstkauf != "Nein":
+            # Skip if Selbstkauf is "Nein" (they bought their own ticket)
+            if selbstkauf == "Nein":
                 continue
 
             # Check if access key already exists
@@ -249,12 +257,20 @@ def process_entries(sheet, test_mode=False):
             status_col_idx = headers.index(STATUS_COLUMN) + 1
             
             # Check if Access Key column exists, if not create it
-            if ACCESS_KEY_COLUMN in headers:
-                key_col_idx = headers.index(ACCESS_KEY_COLUMN) + 1
+            # Find all occurrences of "Access Key" column
+            access_key_indices = [i for i, h in enumerate(headers) if h == ACCESS_KEY_COLUMN]
+            
+            if len(access_key_indices) > 1:
+                logging.warning(f"Found {len(access_key_indices)} columns named '{ACCESS_KEY_COLUMN}' at positions {[i+1 for i in access_key_indices]}")
+                logging.warning(f"Using the first one at column {access_key_indices[0]+1}")
+                key_col_idx = access_key_indices[0] + 1
+            elif len(access_key_indices) == 1:
+                key_col_idx = access_key_indices[0] + 1
+                logging.info(f"Found '{ACCESS_KEY_COLUMN}' column at position {key_col_idx}")
             else:
                 key_col_idx = len(headers) + 1
                 sheet.update_cell(1, key_col_idx, ACCESS_KEY_COLUMN)
-                logging.info(f"Created '{ACCESS_KEY_COLUMN}' column")
+                logging.info(f"Created '{ACCESS_KEY_COLUMN}' column at position {key_col_idx}")
         except ValueError as e:
             logging.error(f"Required column not found: {e}")
             return
@@ -274,8 +290,8 @@ def process_entries(sheet, test_mode=False):
             if status != STATUS_OPEN:
                 continue
 
-            # Skip if Selbstkauf is not "Nein"
-            if selbstkauf != "Nein":
+            # Skip if Selbstkauf is "Nein" (they bought their own ticket)
+            if selbstkauf == "Nein":
                 continue
 
             # Skip if no valid email

@@ -186,28 +186,30 @@ def generate_keys_only(sheet):
             if selbstkauf == "Nein":
                 continue
 
+            # Skip if no valid email
+            if not is_valid_email(email_raw):
+                email_check = str(email_raw).strip()
+                if email_check and email_check.replace('+', '').replace('-', '').replace(' ', '').replace('(', '').replace(')', '').isdigit():
+                    logging.info(f"Row {idx}: Phone number detected ({email_check}), skipping key generation")
+                elif email_check:
+                    logging.info(f"Row {idx}: Invalid email ({email_check}), skipping key generation")
+                else:
+                    logging.info(f"Row {idx}: No email provided, skipping key generation")
+                skipped_count += 1
+                continue
+
             # Check if access key already exists
             existing_key_raw = record.get(ACCESS_KEY_COLUMN, "")
             existing_key = str(existing_key_raw).strip() if existing_key_raw else ""
             
             if existing_key:
-                # Log with email/phone info if available
-                contact_info = email if email else "unknown contact"
-                logging.info(f"Row {idx}: Access key already exists ({contact_info})")
+                logging.info(f"Row {idx}: Access key already exists for {email}")
                 skipped_count += 1
             else:
-                # Generate new access key for all entries, regardless of email validity
+                # Generate new access key
                 access_key = generate_access_key()
                 sheet.update_cell(idx, key_col_idx, access_key)
-                
-                # Log appropriate message based on what contact info is available
-                if is_valid_email(email_raw):
-                    logging.info(f"Row {idx}: Generated key {access_key} for {email}")
-                elif email:
-                    logging.info(f"Row {idx}: Generated key {access_key} (contact: {email})")
-                else:
-                    logging.info(f"Row {idx}: Generated key {access_key} (no contact info)")
-                
+                logging.info(f"Row {idx}: Generated key {access_key} for {email}")
                 generated_count += 1
 
         logging.info(f"\n{'='*60}")

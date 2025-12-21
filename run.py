@@ -114,11 +114,13 @@ def send_email(to_email, access_key, name="", grund="", num_tickets="", ticket_c
         """
 
         if test_mode:
-            logging.info(f"[TEST MODE] Would send email to: {to_email}")
-            logging.info(f"[TEST MODE] Subject: {subject}")
-            logging.info(f"[TEST MODE] Access Key: {access_key}")
-            logging.info(f"[TEST MODE] Name: {name}, Grund: {grund}, Tickets: {num_tickets}, Category: {ticket_category}")
-            logging.info(f"[TEST MODE] Body preview: {body[:200]}...")
+            logging.info(f"✉️  Email: {to_email}")
+            logging.info(f"👤 Name: {name}")
+            logging.info(f"🎟️  Tickets: {num_tickets}")
+            logging.info(f"🏷️  Kategorie: {ticket_category}")
+            logging.info(f"📝 Grund: {grund}")
+            logging.info(f"🔑 Code: {access_key}")
+            logging.info(f"{'─'*60}")
             return True
 
         msg = MIMEMultipart('alternative')
@@ -386,17 +388,13 @@ def process_entries(sheet, test_mode=False):
                 logging.warning(f"Row {idx}: No access key found for {email}, skipping. Run with --generate-keys first!")
                 skipped_count += 1
                 continue
-            
-            logging.info(f"Row {idx}: Using access key {access_key} for {email}")
 
             # Send email with personalized information
             if send_email(email, access_key, name, grund, num_tickets, ticket_category, test_mode):
                 if not test_mode:
                     # Update status to "2. Verschickt"
                     sheet.update_cell(idx, status_col_idx, STATUS_SENT)
-                    logging.info(f"Row {idx}: Updated status to '{STATUS_SENT}' for {email}")
-                else:
-                    logging.info(f"Row {idx}: [TEST] Would update status to '{STATUS_SENT}' for {email}")
+                    logging.info(f"Row {idx}: Email sent to {email}, status updated to '{STATUS_SENT}'")
                 processed_count += 1
             else:
                 logging.error(f"Row {idx}: Failed to send email to {email}, status not updated")

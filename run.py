@@ -172,34 +172,34 @@ def generate_keys_only(sheet):
             if status != STATUS_OPEN:
                 continue
 
-            # Skip if no valid email
-            if not is_valid_email(email_raw):
-                email_check = str(email_raw).strip()
-                if email_check and email_check.replace('+', '').replace('-', '').replace(' ', '').replace('(', '').replace(')', '').isdigit():
-                    logging.warning(f"Row {idx}: Phone number detected ({email_check}), skipping")
-                else:
-                    logging.warning(f"Row {idx}: Invalid or missing email ({email_check}), skipping")
-                skipped_count += 1
-                continue
-
             # Check if access key already exists
             existing_key_raw = record.get(ACCESS_KEY_COLUMN, "")
             existing_key = str(existing_key_raw).strip() if existing_key_raw else ""
             
             if existing_key:
-                logging.info(f"Row {idx}: Access key already exists for {email}")
+                # Log with email/phone info if available
+                contact_info = email if email else "unknown contact"
+                logging.info(f"Row {idx}: Access key already exists ({contact_info})")
                 skipped_count += 1
             else:
-                # Generate new access key
+                # Generate new access key for all entries, regardless of email validity
                 access_key = generate_access_key()
                 sheet.update_cell(idx, key_col_idx, access_key)
-                logging.info(f"Row {idx}: Generated key {access_key} for {email}")
+                
+                # Log appropriate message based on what contact info is available
+                if is_valid_email(email_raw):
+                    logging.info(f"Row {idx}: Generated key {access_key} for {email}")
+                elif email:
+                    logging.info(f"Row {idx}: Generated key {access_key} (contact: {email})")
+                else:
+                    logging.info(f"Row {idx}: Generated key {access_key} (no contact info)")
+                
                 generated_count += 1
 
         logging.info(f"\n{'='*60}")
         logging.info(f"🔑 Key Generation Complete!")
         logging.info(f"Keys generated: {generated_count}")
-        logging.info(f"Skipped (already has key or invalid): {skipped_count}")
+        logging.info(f"Skipped (already has key): {skipped_count}")
         logging.info(f"{'='*60}")
         logging.info("\n⚠️  NEXT STEPS:")
         logging.info("1. Upload the generated keys to your website")

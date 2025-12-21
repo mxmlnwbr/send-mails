@@ -64,10 +64,18 @@ def connect_to_sheet():
 
 def is_valid_email(email):
     """Basic email validation."""
-    if not email or not isinstance(email, str):
+    if not email:
         return False
-    email = email.strip()
-    return "@" in email and "." in email and len(email) > 5
+    
+    # Convert to string if it's not already (handles phone numbers as integers)
+    email_str = str(email).strip()
+    
+    # Check if it looks like a phone number (only digits, +, -, spaces, parentheses)
+    if email_str.replace('+', '').replace('-', '').replace(' ', '').replace('(', '').replace(')', '').isdigit():
+        return False
+    
+    # Basic email validation
+    return "@" in email_str and "." in email_str and len(email_str) > 5
 
 
 def send_email(to_email, access_key, test_mode=False):
@@ -150,21 +158,29 @@ def process_entries(sheet, test_mode=False):
 
         # Process each row (starting from row 2, since row 1 is headers)
         for idx, record in enumerate(tqdm(all_records, desc="Processing entries"), start=2):
-            status = record.get(STATUS_COLUMN, "").strip()
-            email = record.get(EMAIL_COLUMN, "").strip()
+            # Convert to string and strip to handle both strings and numbers
+            status = str(record.get(STATUS_COLUMN, "")).strip()
+            email_raw = record.get(EMAIL_COLUMN, "")
+            email = str(email_raw).strip() if email_raw else ""
 
             # Only process entries with status "1. Offen"
             if status != STATUS_OPEN:
                 continue
 
             # Skip if no valid email
-            if not is_valid_email(email):
-                logging.warning(f"Row {idx}: Invalid or missing email, skipping")
+            if not is_valid_email(email_raw):
+                # Check if it's a phone number
+                email_check = str(email_raw).strip()
+                if email_check and email_check.replace('+', '').replace('-', '').replace(' ', '').replace('(', '').replace(')', '').isdigit():
+                    logging.warning(f"Row {idx}: Phone number detected ({email_check}), skipping (SMS not supported)")
+                else:
+                    logging.warning(f"Row {idx}: Invalid or missing email ({email_check}), skipping")
                 skipped_count += 1
                 continue
 
             # Check if access key already exists
-            existing_key = record.get(ACCESS_KEY_COLUMN, "").strip()
+            existing_key_raw = record.get(ACCESS_KEY_COLUMN, "")
+            existing_key = str(existing_key_raw).strip() if existing_key_raw else ""
             if existing_key:
                 access_key = existing_key
                 logging.info(f"Row {idx}: Using existing access key for {email}")

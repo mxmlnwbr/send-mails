@@ -92,9 +92,11 @@ Production mode will:
 ## Google Sheet Requirements
 
 Your sheet should have these columns:
-- **Email**: Email addresses of recipients
+- **Email**: Email addresses of recipients (phone numbers will be skipped)
 - **Status**: "1. Offen" for pending, "2. Verschickt" for sent
 - **Access Key**: Auto-created by the script (stores generated keys)
+
+**Note:** Phone numbers in the Email column will be automatically detected and skipped with a warning. Only valid email addresses will be processed.
 
 ## File Structure
 
@@ -120,3 +122,11 @@ Common issues:
 - **"Credentials file not found"**: Make sure `credentials.json` is in the project root
 - **"Permission denied"**: Share the Google Sheet with your service account email
 - **SMTP authentication failed**: Use App Password for Gmail (not regular password)
+- **Phone numbers in Email column**: Phone numbers are automatically detected and skipped (SMS not supported)
+
+### SMS Support
+
+Currently, only email is supported. If you need SMS support for phone numbers, you would need to:
+1. Integrate an SMS service (e.g., Twilio, AWS SNS)
+2. Modify the script to detect and send to phone numbers
+3. Add SMS credentials to your `.env` file

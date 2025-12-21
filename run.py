@@ -32,6 +32,7 @@ CREDENTIALS_FILE = os.getenv("GOOGLE_CREDENTIALS_FILE", "credentials.json")
 EMAIL_COLUMN = "Email"
 STATUS_COLUMN = "Status"
 ACCESS_KEY_COLUMN = "Access Key"
+SELBSTKAUF_COLUMN = "Selbstkauf"
 STATUS_OPEN = "1. Offen"
 STATUS_SENT = "2. Verschickt"
 
@@ -167,9 +168,14 @@ def generate_keys_only(sheet):
             status = str(record.get(STATUS_COLUMN, "")).strip()
             email_raw = record.get(EMAIL_COLUMN, "")
             email = str(email_raw).strip() if email_raw else ""
+            selbstkauf = str(record.get(SELBSTKAUF_COLUMN, "")).strip()
 
             # Only process entries with status "1. Offen"
             if status != STATUS_OPEN:
+                continue
+
+            # Skip if Selbstkauf is not "Nein"
+            if selbstkauf != "Nein":
                 continue
 
             # Check if access key already exists
@@ -262,9 +268,14 @@ def process_entries(sheet, test_mode=False):
             status = str(record.get(STATUS_COLUMN, "")).strip()
             email_raw = record.get(EMAIL_COLUMN, "")
             email = str(email_raw).strip() if email_raw else ""
+            selbstkauf = str(record.get(SELBSTKAUF_COLUMN, "")).strip()
 
             # Only process entries with status "1. Offen"
             if status != STATUS_OPEN:
+                continue
+
+            # Skip if Selbstkauf is not "Nein"
+            if selbstkauf != "Nein":
                 continue
 
             # Skip if no valid email

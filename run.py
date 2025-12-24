@@ -408,6 +408,21 @@ def process_entries(sheet, test_mode=False):
             logging.info(f"Emails sent: {processed_count}")
         logging.info(f"Skipped: {skipped_count}")
         logging.info(f"{'='*60}")
+        
+        # Send additional test email in test mode
+        if test_mode:
+            logging.info(f"\n{'='*60}")
+            logging.info("📬 Sending additional test email simulation...")
+            logging.info(f"{'='*60}\n")
+            send_email(
+                to_email="maximilian.weber@bluewin.ch",
+                access_key="RB26-TEST-DEMO-MAIL",
+                name="Max",
+                grund="Test Email für Format-Prüfung",
+                num_tickets="2",
+                ticket_category="VIP",
+                test_mode=True
+            )
 
     except Exception as e:
         logging.error(f"Error processing entries: {e}")

@@ -121,7 +121,6 @@ def send_email(to_email, access_key, name="", grund="", num_tickets="", ticket_c
             logging.info(f"📝 Grund: {grund}")
             logging.info(f"🔑 Code: {access_key}")
             logging.info(f"🔗 Link: {ticket_link}")
-            logging.info(f"\n📧 Email Body (HTML):\n{body}")
             logging.info(f"{'─'*60}")
             return True
 

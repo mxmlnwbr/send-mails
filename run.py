@@ -99,6 +99,7 @@ def send_email(to_email, access_key, name="", grund="", num_tickets="", ticket_c
             ticket_info += f"<p><strong>Grund:</strong> {grund}</p>"
         
         subject = "Rigibeats 2026 - Dein Ticket"
+        ticket_link = "https://eventfrog.ch/rigibeats"
         body = f"""
         <html>
             <body>
@@ -106,7 +107,7 @@ def send_email(to_email, access_key, name="", grund="", num_tickets="", ticket_c
                 <p>Hier ist dein Zugangsschlüssel für Rigibeats 2026 🎉</p>
                 {ticket_info}
                 <p>Dein Code: <strong>{access_key}</strong></p>
-                <p>Jetzt einlösen: <a href="https://eventfrog.ch/de/p/party/house-techno/rigibeats-2026-7381565240046025838.html"</a></p>
+                <p><a href="{ticket_link}">Jetzt einlösen auf Eventfrog</a></p>
                 <p>See you on the dancefloor ❤️<br>Rigibeats Team</p>
             </body>
         </html>
@@ -119,6 +120,8 @@ def send_email(to_email, access_key, name="", grund="", num_tickets="", ticket_c
             logging.info(f"🏷️  Kategorie: {ticket_category}")
             logging.info(f"📝 Grund: {grund}")
             logging.info(f"🔑 Code: {access_key}")
+            logging.info(f"🔗 Link: {ticket_link}")
+            logging.info(f"\n📧 Email Body (HTML):\n{body}")
             logging.info(f"{'─'*60}")
             return True
 

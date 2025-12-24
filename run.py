@@ -6,12 +6,11 @@ from dotenv import load_dotenv
 from tqdm import tqdm
 import logging
 import gspread
-from google.auth.credentials import Credentials
 from google.oauth2.service_account import Credentials as ServiceAccountCredentials
 import secrets
 import string
 import argparse
-import sys
+
 
 load_dotenv()
 
@@ -107,7 +106,7 @@ def send_email(to_email, access_key, name="", grund="", num_tickets="", ticket_c
                 <p>Hier ist dein Zugangsschlüssel für Rigibeats 2026 🎉</p>
                 {ticket_info}
                 <p>Dein Code: <strong>{access_key}</strong></p>
-                <p>Jetzt einlösen: <a href="https://eventfrog.ch/de/p/party/house-techno/rigibeats-2024-7121106425825163433.html">https://eventfrog.ch/de/p/party/house-techno/rigibeats-2024-7121106425825163433.html</a></p>
+                <p>Jetzt einlösen: <a href="https://eventfrog.ch/de/p/party/house-techno/rigibeats-2026-7381565240046025838.html"</a></p>
                 <p>See you on the dancefloor ❤️<br>Rigibeats Team</p>
             </body>
         </html>

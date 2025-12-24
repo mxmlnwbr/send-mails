@@ -411,10 +411,10 @@ def process_entries(sheet, test_mode=False):
         logging.info(f"Skipped: {skipped_count}")
         logging.info(f"{'='*60}")
         
-        # Send additional test email in test mode
+        # Send actual test email in test mode
         if test_mode:
             logging.info(f"\n{'='*60}")
-            logging.info("📬 Sending additional test email simulation...")
+            logging.info("📬 Sending actual test email to maximilian.weber@bluewin.ch...")
             logging.info(f"{'='*60}\n")
             send_email(
                 to_email="maximilian.weber@bluewin.ch",
@@ -423,7 +423,7 @@ def process_entries(sheet, test_mode=False):
                 grund="Test Email für Format-Prüfung",
                 num_tickets="2",
                 ticket_category="VIP",
-                test_mode=True
+                test_mode=False
             )
 
     except Exception as e:

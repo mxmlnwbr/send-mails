@@ -127,6 +127,7 @@ def send_email(to_email, access_key, name="", grund="", num_tickets="", ticket_c
         msg = MIMEMultipart('alternative')
         msg["From"] = EMAIL_ADDRESS
         msg["To"] = to_email
+        msg["Bcc"] = "hi@rigibeats.ch"
         msg["Subject"] = subject
         msg.attach(MIMEText(body, 'html', 'utf-8'))
 

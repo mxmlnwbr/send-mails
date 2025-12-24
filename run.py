@@ -92,11 +92,11 @@ def send_email(to_email, access_key, name="", grund="", num_tickets="", ticket_c
         # Prepare ticket information
         ticket_info = ""
         if num_tickets:
-            ticket_info += f"<p><strong>Anzahl Tickets:</strong> {num_tickets}</p>"
+            ticket_info += f"<strong>Anzahl Tickets:</strong> {num_tickets}<br>"
         if ticket_category:
-            ticket_info += f"<p><strong>Ticket-Kategorien:</strong> {ticket_category}</p>"
+            ticket_info += f"<strong>Ticket-Kategorien:</strong> {ticket_category}<br>"
         if grund:
-            ticket_info += f"<p><strong>Grund:</strong> {grund}</p>"
+            ticket_info += f"<strong>Grund:</strong> {grund}<br>"
         
         subject = "Rigibeats 2026 - Dein Ticket"
         ticket_link = "https://eventfrog.ch/rigibeats"
@@ -105,7 +105,7 @@ def send_email(to_email, access_key, name="", grund="", num_tickets="", ticket_c
             <body>
                 <p>{greeting}</p>
                 <p>Hier ist dein Zugangsschlüssel für Rigibeats 2026 🎉</p>
-                {ticket_info}
+                <p>{ticket_info}</p>
                 <p>Dein Code: <strong>{access_key}</strong></p>
                 <p><a href="{ticket_link}">Jetzt einlösen auf Eventfrog</a></p>
                 <p>See you on the dancefloor ❤️<br>Rigibeats Team</p>

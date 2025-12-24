@@ -98,7 +98,7 @@ def send_email(to_email, access_key, name="", grund="", num_tickets="", ticket_c
         if grund:
             ticket_info += f"<strong>Grund:</strong> {grund}<br>"
         
-        subject = "Rigibeats 2026 - Dein Ticket"
+        subject = "Rigibeats 2026 - Ticket Zugangscode"
         ticket_link = "https://eventfrog.ch/rigibeats"
         body = f"""
         <html>

@@ -396,9 +396,26 @@ def process_entries(sheet, test_mode=False):
                 if not test_mode:
                     # Update status to "2. Verschickt"
                     sheet.update_cell(idx, status_col_idx, STATUS_SENT)
+                    # Set green background for access key cell
+                    sheet.format(f"{chr(64 + key_col_idx)}{idx}", {
+                        "backgroundColor": {
+                            "red": 0.85,
+                            "green": 1.0,
+                            "blue": 0.85
+                        }
+                    })
                     logging.info(f"Row {idx}: Email sent to {email}, status updated to '{STATUS_SENT}'")
                 processed_count += 1
             else:
+                if not test_mode:
+                    # Set red background for access key cell on failure
+                    sheet.format(f"{chr(64 + key_col_idx)}{idx}", {
+                        "backgroundColor": {
+                            "red": 1.0,
+                            "green": 0.85,
+                            "blue": 0.85
+                        }
+                    })
                 logging.error(f"Row {idx}: Failed to send email to {email}, status not updated")
                 skipped_count += 1
 

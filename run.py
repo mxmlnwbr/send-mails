@@ -142,41 +142,23 @@ def send_email(to_email, access_key, name="", grund="", num_tickets="", ticket_c
         return False
 
 
-def export_keys_to_files(sheet):
-    """Export all access keys to comma-separated text file."""
+def export_keys_to_files(newly_generated_keys=None):
+    """Export newly generated access keys to comma-separated text file."""
     try:
         logging.info(f"\n{'='*60}")
         logging.info("📤 Exporting keys to file...")
         logging.info(f"{'='*60}\n")
         
-        # Get header row
-        headers = sheet.row_values(1)
-        
-        # Find Access Key column
-        access_key_indices = [i for i, h in enumerate(headers) if h == ACCESS_KEY_COLUMN]
-        
-        if not access_key_indices:
-            logging.error(f"'{ACCESS_KEY_COLUMN}' column not found in the sheet")
-            return
-        
-        key_col_idx = access_key_indices[0] + 1
-        
-        # Get all values from the Access Key column (skip header)
-        all_keys = sheet.col_values(key_col_idx)[1:]  # Skip header row
-        
-        # Filter out empty values and strip whitespace
-        valid_keys = [key.strip() for key in all_keys if key and key.strip()]
-        
-        if not valid_keys:
-            logging.warning("No access keys found in the sheet")
+        if not newly_generated_keys:
+            logging.warning("No newly generated keys to export")
             return
         
         # Export comma-separated with space
         with open("access_keys_comma_space.txt", 'w', encoding='utf-8') as f:
-            f.write(", ".join(valid_keys))
+            f.write(", ".join(newly_generated_keys))
         
         logging.info(f"✅ Export Complete!")
-        logging.info(f"Total keys exported: {len(valid_keys)}")
+        logging.info(f"Total keys exported: {len(newly_generated_keys)}")
         logging.info(f"File created: access_keys_comma_space.txt")
         
     except Exception as e:
@@ -234,6 +216,7 @@ def generate_keys_only(sheet):
 
         generated_count = 0
         skipped_count = 0
+        newly_generated_keys = []
 
         # Process each row (starting from row 2, since row 1 is headers)
         for idx, record in enumerate(tqdm(all_records, desc="Generating keys"), start=2):
@@ -273,6 +256,7 @@ def generate_keys_only(sheet):
                 # Generate new access key
                 access_key = generate_access_key()
                 sheet.update_cell(idx, key_col_idx, access_key)
+                newly_generated_keys.append(access_key)
                 logging.info(f"Row {idx}: Generated key {access_key} for {email}")
                 generated_count += 1
 
@@ -282,9 +266,9 @@ def generate_keys_only(sheet):
         logging.info(f"Skipped (already has key): {skipped_count}")
         logging.info(f"{'='*60}")
         
-        # Automatically export keys after generation
-        if generated_count > 0 or skipped_count > 0:
-            export_keys_to_files(sheet)
+        # Automatically export newly generated keys after generation
+        if generated_count > 0:
+            export_keys_to_files(newly_generated_keys)
         
         logging.info("\n⚠️  NEXT STEPS:")
         logging.info("1. Upload access_keys_comma_space.txt to Eventfrog")

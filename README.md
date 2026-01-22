@@ -2,6 +2,32 @@
 
 Automated email distribution with unique access keys from Google Sheets.
 
+## Event Info Email Script
+
+Send nicely formatted HTML event information emails for Rigibeats 2026:
+
+### Commands
+
+```bash
+# 1. Simulate - Check content variations and duplicates
+uv run python run_eventinfo.py --simulate
+
+# 2. Dry run - Send test emails to verify format
+uv run python run_eventinfo.py --dry-run
+
+# 3. Production - Send to all recipients
+uv run python run_eventinfo.py
+```
+
+### Features
+- German HTML formatted emails
+- Red-highlighted notice for Goldau guests (Eventfrog Ticket = RigiBahn Ticket)
+- General event info for all guests (Goldau & Gersau)
+- Automatic deduplication (each email receives only ONE email)
+- Tracking in CSV to avoid re-sending
+
+---
+
 ## Prerequisites
 
 - Python 3.10+, UV, Gmail/SMTP account

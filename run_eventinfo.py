@@ -205,6 +205,27 @@ def process_csv_and_send_emails(dry_run=False, test_email=None, simulate=False):
             else:
                 logging.error(f"\n❌ Failed to send one or both test emails")
             
+            # Create test output files to show what the tracking looks like
+            logging.info("\n📄 Creating test output files (CSV & Excel) with sample data...")
+            df_test = df.copy()
+            df_test['EventInfo Sent'] = ''
+            # Mark first few entries as "sent" for demonstration
+            df_test.at[0, 'EventInfo Sent'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            df_test.at[1, 'EventInfo Sent'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            
+            # Save test files
+            timestamp = datetime.now().strftime('%Y-%m-%d_%H%M')
+            test_csv = f"data/TEST_eventinfo_sent_{timestamp}.csv"
+            test_excel = f"data/TEST_eventinfo_sent_{timestamp}.xlsx"
+            
+            df_test.to_csv(test_csv, index=False, encoding='utf-8-sig')
+            df_test.to_excel(test_excel, index=False, engine='openpyxl')
+            
+            logging.info(f"✅ Test files created:")
+            logging.info(f"   - CSV: {test_csv}")
+            logging.info(f"   - Excel: {test_excel}")
+            logging.info(f"\n💡 Open the Excel file to see how the 'EventInfo Sent' column will look!")
+            
             return
         
         # If simulate mode, show what would happen

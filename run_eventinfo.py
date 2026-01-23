@@ -297,44 +297,54 @@ def process_csv_and_send_emails(dry_run=False, test_email=None, simulate=False):
         logging.info("🚀 PRODUCTION MODE - Sending emails to all recipients")
         logging.info(f"{'='*60}\n")
         
+        # First pass: Group by email and prioritize Goldau tickets
+        logging.info("📋 Analyzing tickets by email address...")
+        email_groups = {}
+        for idx, row in df.iterrows():
+            email = row.get('Email', '')
+            if not is_valid_email(email):
+                continue
+            if row.get('EventInfo Sent', ''):
+                continue  # Skip already sent
+                
+            category = row.get('Category', '')
+            is_goldau = is_goldau_ticket(category)
+            
+            if email not in email_groups:
+                email_groups[email] = {
+                    'indices': [idx],
+                    'first_name': row.get('First name', ''),
+                    'is_goldau': is_goldau
+                }
+            else:
+                email_groups[email]['indices'].append(idx)
+                # Prioritize Goldau: if any ticket is Goldau, send Goldau version
+                if is_goldau:
+                    email_groups[email]['is_goldau'] = True
+        
+        logging.info(f"Found {len(email_groups)} unique email addresses to process")
+        
         sent_count = 0
         skipped_count = 0
         already_sent_count = 0
         duplicate_count = 0
         
-        # Track sent emails to avoid duplicates
-        sent_emails = set()
-        
-        for idx, row in tqdm(df.iterrows(), total=len(df), desc="Sending emails"):
-            email = row.get('Email', '')
-            first_name = row.get('First name', '')
-            category = row.get('Category', '')
-            already_sent = row.get('EventInfo Sent', '')
-            
-            # Skip if already sent
-            if already_sent:
-                already_sent_count += 1
-                continue
-            
-            # Skip invalid emails
-            if not is_valid_email(email):
-                skipped_count += 1
-                continue
-            
-            # Skip if we already sent to this email in this run (deduplicate)
-            if email in sent_emails:
-                df.at[idx, 'EventInfo Sent'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                duplicate_count += 1
-                continue
-            
-            # Determine if Goldau ticket
-            is_goldau = is_goldau_ticket(category)
+        # Second pass: Send emails with correct version
+        for email, info in tqdm(email_groups.items(), desc="Sending emails"):
+            first_name = info['first_name']
+            is_goldau = info['is_goldau']
+            indices = info['indices']
             
             # Send email
             if send_event_info_email(email, first_name, is_goldau, test_mode=False):
-                df.at[idx, 'EventInfo Sent'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                sent_emails.add(email)
+                # Mark ALL rows with this email as sent
+                timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                for idx in indices:
+                    df.at[idx, 'EventInfo Sent'] = timestamp
+                
                 sent_count += 1
+                if len(indices) > 1:
+                    duplicate_count += len(indices) - 1
             else:
                 skipped_count += 1
         

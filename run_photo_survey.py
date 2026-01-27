@@ -7,7 +7,6 @@ Asks attendees to share feedback about what went well and what could be improved
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from email.mime.image import MIMEImage
 import os
 from dotenv import load_dotenv
 from tqdm import tqdm
@@ -45,8 +44,8 @@ def is_valid_email(email):
     return "@" in email_str and "." in email_str and len(email_str) > 5
 
 
-def send_feedback_survey_email(to_email, first_name="", image_path=IMAGE_FILE, test_mode=False):
-    """Send feedback survey email with HTML formatting and attached image."""
+def send_feedback_survey_email(to_email, first_name="", test_mode=False):
+    """Send feedback survey email with HTML formatting."""
     try:
         # Personalized greeting
         greeting = f"Hey {first_name}!" if first_name else "Hey!"
@@ -138,7 +137,6 @@ def send_feedback_survey_email(to_email, first_name="", image_path=IMAGE_FILE, t
             logging.info(f"To: {to_email}")
             logging.info(f"Name: {first_name}")
             logging.info(f"Subject: {subject}")
-            logging.info(f"Image: {image_path}")
             logging.info(f"Forms Link: {FORMS_LINK}")
             logging.info(f"{'─'*60}")
             return True
@@ -233,9 +231,7 @@ def process_csv_and_send_emails(dry_run=False, test_email=None, simulate=False):
             logging.info(f"   Already sent: {already_sent}")
             logging.info(f"\n   ✅ DEDUPLICATION: Each email will receive ONLY ONE email!")
             logging.info(f"   📧 Total emails that will be sent: {len(email_tracker)}")
-            logging.info(f"\n   Image file: {IMAGE_FILE}")
-            logging.info(f"   Image size: {os.path.getsize(IMAGE_FILE) / 1024 / 1024:.2f} MB")
-            logging.info(f"   Forms link: {FORMS_LINK}")
+            logging.info(f"\n   Forms link: {FORMS_LINK}")
             logging.info(f"{'='*60}\n")
             
             return
